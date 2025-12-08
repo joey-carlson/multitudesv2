@@ -1,0 +1,51 @@
+# Multitudes v2.0 - Core Dependencies
+# Generated from pyproject.toml
+# Install with: pip install -r requirements.txt
+
+# Web Framework & API
+fastapi>=0.108.0
+uvicorn[standard]>=0.25.0
+python-multipart>=0.0.6
+
+# Data Validation
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+
+# Database
+sqlalchemy>=2.0.25
+asyncpg>=0.29.0
+alembic>=1.13.0
+psycopg2-binary>=2.9.9
+influxdb-client>=1.40.0
+
+# Async & Background Tasks
+redis>=5.0.1
+celery>=5.3.4
+httpx>=0.26.0
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+cryptography>=41.0.7
+
+# Frontend
+streamlit>=1.29.0
+pandas>=2.1.4
+plotly>=5.18.0
+
+# AI/ML
+openai>=1.7.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Development Dependencies (install with: pip install -r requirements-dev.txt)
+# pytest>=7.4.3
+# pytest-asyncio>=0.23.2
+# pytest-cov>=4.1.0
+# pytest-mock>=3.12.0
+# mypy>=1.8.0
+# ruff>=0.1.9
+# black>=23.12.1
+# types-redis>=4.6.0
