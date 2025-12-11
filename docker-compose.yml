@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - Main relational database
+  postgres:
+    image: postgres:15-alpine
+    container_name: multitudes-postgres
+    environment:
+      POSTGRES_USER: multitudes
+      POSTGRES_PASSWORD: multitudes_dev_password
+      POSTGRES_DB: multitudes_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multitudes"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # InfluxDB - Time-series database
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: multitudes-influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: multitudes
+      DOCKER_INFLUXDB_INIT_PASSWORD: multitudes_dev_password
+      DOCKER_INFLUXDB_INIT_ORG: multitudes
+      DOCKER_INFLUXDB_INIT_BUCKET: multitudes-data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: multitudes-dev-token-change-in-production
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - Caching and Celery message broker
+  redis:
+    image: redis:7-alpine
+    container_name: multitudes-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  influxdb_config:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: multitudes-network

@@ -463,7 +463,518 @@ def test_complete_user_journey():
 - Enhanced with new architecture
 - Gradual feature rollout
 
-## 12. Future Considerations
+## 12. User Personalization Architecture
+
+### 12.1 Phase 1: Adaptive Prompt Templates (Current Implementation)
+
+#### Storage Schema
+```sql
+-- User Context Storage
+CREATE TABLE user_contexts (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    context_type VARCHAR(50) NOT NULL,  -- 'preference', 'pattern', 'stat'
+    key VARCHAR(100) NOT NULL,
+    value JSONB NOT NULL,
+    confidence FLOAT DEFAULT 1.0,
+    weight FLOAT DEFAULT 1.0,  -- Context decay weighting
+    learned_from VARCHAR(100),  -- 'explicit', 'feedback', 'pattern'
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    last_accessed TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, context_type, key)
+);
+
+CREATE INDEX idx_user_contexts_user_type ON user_contexts(user_id, context_type);
+CREATE INDEX idx_user_contexts_weight ON user_contexts(weight);
+
+-- Feedback Loop Storage
+CREATE TABLE user_feedback (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    interaction_type VARCHAR(50),  -- 'task_suggestion', 'persona_detection', etc.
+    interaction_data JSONB,
+    feedback_type VARCHAR(50),  -- 'accepted', 'rejected', 'modified'
+    feedback_data JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_feedback_user_time ON user_feedback(user_id, created_at DESC);
+```
+
+#### Context Manager
+```python
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+
+@dataclass
+class UserContext:
+    """Stores learned user patterns and preferences"""
+    user_id: str
+    preferences: Dict[str, any]
+    patterns: List[str]
+    stats: Dict[str, float]
+    persona_affinities: Dict[str, float]
+    
+    def to_prompt_context(self) -> str:
+        """Convert to text for LLM prompt"""
+        return f"""
+User Profile:
+- Work Style: {self.preferences.get('work_style')}
+- Peak Hours: {self.preferences.get('peak_energy_hours')}
+- Communication: {self.preferences.get('communication_preferences')}
+
+Learned Patterns:
+{chr(10).join(f"- {p}" for p in self.patterns)}
+
+Task Completion Stats:
+- Average Duration: {self.stats.get('avg_duration')}
+- Success Rate: {self.stats.get('success_rate', 0):.0%}
+- Preferred Task Types: {', '.join(self.stats.get('preferred_types', []))}
+"""
+
+class ContextManager:
+    """Manages user context with decay weighting"""
+    
+    def get_context(self, user_id: str) -> UserContext:
+        """Retrieve user context with time-based weighting"""
+        contexts = self._fetch_contexts(user_id)
+        return self._apply_decay_weights(contexts)
+    
+    def _apply_decay_weights(self, contexts: List) -> UserContext:
+        """Apply time-based decay to context relevance"""
+        now = datetime.utcnow()
+        weighted_contexts = []
+        
+        for ctx in contexts:
+            age_days = (now - ctx.created_at).days
+            
+            if age_days <= 7:
+                weight = 1.0
+            elif age_days <= 30:
+                weight = 0.7
+            elif age_days <= 90:
+                weight = 0.4
+            else:
+                weight = 0.2
+            
+            ctx.weight = weight
+            weighted_contexts.append(ctx)
+        
+        return self._aggregate_contexts(weighted_contexts)
+```
+
+#### AI Prompt Builder
+```python
+class PersonalizedPromptBuilder:
+    """Builds context-aware prompts for AI interactions"""
+    
+    def build_task_suggestion_prompt(
+        self, 
+        user_context: UserContext,
+        current_tasks: List[Task],
+        current_time: datetime
+    ) -> str:
+        """Generate personalized prompt for task suggestions"""
+        
+        context_str = user_context.to_prompt_context()
+        current_hour = current_time.hour
+        
+        # Get most relevant persona for current time
+        active_persona = self._detect_active_persona(
+            user_context,
+            current_hour
+        )
+        
+        prompt = f"""
+{context_str}
+
+Current Context:
+- Time: {current_time.strftime('%A %I:%M %p')}
+- Active Persona: {active_persona.name}
+- Energy Level: {active_persona.predict_energy(current_time)}
+
+Current Tasks ({len(current_tasks)}):
+{self._format_tasks(current_tasks[:5])}
+
+Based on this user's patterns and current state, suggest:
+1. Which task to work on next
+2. Optimal duration for this session
+3. Any schedule adjustments needed
+
+Format as JSON.
+"""
+        return prompt
+```
+
+### 12.2 Phase 2: RAG + Vector Embeddings (Future)
+
+#### Enhanced Schema
+```sql
+-- Add vector support (requires pgvector extension)
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Interaction Embeddings
+CREATE TABLE interaction_embeddings (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    interaction_type VARCHAR(50),
+    interaction_text TEXT,
+    embedding vector(1536),  -- OpenAI ada-002 dimensions
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_embeddings_user ON interaction_embeddings(user_id);
+CREATE INDEX idx_embeddings_vector ON interaction_embeddings 
+    USING ivfflat (embedding vector_cosine_ops);
+```
+
+#### Semantic Search
+```python
+from typing import List, Tuple
+import openai
+
+class SemanticContextRetriever:
+    """Retrieve relevant past contexts using embeddings"""
+    
+    async def get_relevant_contexts(
+        self,
+        user_id: str,
+        query: str,
+        top_k: int = 10
+    ) -> List[Tuple[str, float]]:
+        """Find semantically similar past interactions"""
+        
+        # Generate embedding for query
+        query_embedding = await self._generate_embedding(query)
+        
+        # Semantic search in database
+        sql = """
+            SELECT 
+                interaction_text,
+                metadata,
+                1 - (embedding <=> $1::vector) as similarity
+            FROM interaction_embeddings
+            WHERE user_id = $2
+            ORDER BY embedding <=> $1::vector
+            LIMIT $3
+        """
+        
+        results = await self.db.fetch(sql, query_embedding, user_id, top_k)
+        return [(r['interaction_text'], r['similarity']) for r in results]
+    
+    async def _generate_embedding(self, text: str) -> List[float]:
+        """Generate embedding using OpenAI API"""
+        response = await openai.Embedding.acreate(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response['data'][0]['embedding']
+```
+
+#### RAG-Enhanced Prompts
+```python
+class RAGPromptBuilder(PersonalizedPromptBuilder):
+    """Enhanced prompt builder with semantic retrieval"""
+    
+    async def build_contextualized_prompt(
+        self,
+        user_id: str,
+        current_situation: str
+    ) -> str:
+        """Build prompt with relevant historical context"""
+        
+        # Retrieve semantically similar past situations
+        relevant_contexts = await self.retriever.get_relevant_contexts(
+            user_id=user_id,
+            query=current_situation,
+            top_k=5
+        )
+        
+        # Build context section
+        historical_context = "\n".join([
+            f"- Similar situation (similarity: {sim:.2f}): {ctx}"
+            for ctx, sim in relevant_contexts
+        ])
+        
+        prompt = f"""
+Current Situation:
+{current_situation}
+
+Relevant Past Experiences:
+{historical_context}
+
+Based on how this user handled similar situations before,
+what's the best approach now?
+"""
+        return prompt
+```
+
+### 12.3 Phase 3: Mobile/Edge Learning Architecture
+
+#### Storage Abstraction Layer
+```python
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
+
+class StorageBackend(ABC):
+    """Abstract storage interface for cross-platform compatibility"""
+    
+    @abstractmethod
+    async def save_context(
+        self,
+        user_id: str,
+        context_type: str,
+        key: str,
+        value: Dict[str, Any]
+    ) -> None:
+        """Save user context (works on PostgreSQL or SQLite)"""
+        pass
+    
+    @abstractmethod
+    async def get_context(
+        self,
+        user_id: str,
+        context_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Retrieve user context"""
+        pass
+    
+    @abstractmethod
+    async def save_embedding(
+        self,
+        user_id: str,
+        text: str,
+        embedding: List[float],
+        metadata: Dict[str, Any]
+    ) -> None:
+        """Save interaction embedding"""
+        pass
+
+class PostgreSQLBackend(StorageBackend):
+    """PostgreSQL implementation for server"""
+    # Implementation for cloud/desktop
+    pass
+
+class SQLiteBackend(StorageBackend):
+    """SQLite implementation for mobile"""
+    # Implementation for mobile devices
+    pass
+```
+
+#### Sync Protocol
+```python
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List
+
+@dataclass
+class SyncOperation:
+    """Represents a sync operation between local and cloud"""
+    operation_type: str  # 'upload', 'download', 'delete'
+    entity_type: str  # 'context', 'task', 'feedback'
+    entity_id: str
+    data: Optional[Dict]
+    timestamp: datetime
+    synced: bool = False
+
+class SyncEngine:
+    """Handles differential sync between mobile and cloud"""
+    
+    async def sync(self, user_id: str, last_sync: datetime) -> None:
+        """Perform incremental sync"""
+        
+        # Get local changes since last sync
+        local_changes = await self.local_store.get_changes_since(last_sync)
+        
+        # Get remote changes since last sync
+        remote_changes = await self.cloud_store.get_changes_since(
+            user_id, 
+            last_sync
+        )
+        
+        # Resolve conflicts (last-write-wins with timestamps)
+        resolved = self._resolve_conflicts(local_changes, remote_changes)
+        
+        # Apply changes
+        await self._apply_local_changes(resolved['to_local'])
+        await self._apply_remote_changes(user_id, resolved['to_remote'])
+        
+        # Update sync timestamp
+        await self.local_store.update_last_sync(datetime.utcnow())
+    
+    def _resolve_conflicts(
+        self,
+        local: List[SyncOperation],
+        remote: List[SyncOperation]
+    ) -> Dict[str, List[SyncOperation]]:
+        """Resolve sync conflicts using timestamps"""
+        # Last-write-wins strategy
+        pass
+```
+
+#### Privacy-Preserving Aggregation
+```python
+import numpy as np
+
+class PrivacyPreservingSync:
+    """Add differential privacy to synced data"""
+    
+    def add_noise(self, value: float, epsilon: float = 1.0) -> float:
+        """Add Laplace noise for differential privacy"""
+        scale = 1.0 / epsilon
+        noise = np.random.laplace(0, scale)
+        return value + noise
+    
+    def aggregate_patterns(
+        self,
+        local_patterns: Dict[str, float]
+    ) -> Dict[str, float]:
+        """Aggregate and anonymize patterns before sync"""
+        
+        # Convert specific values to ranges
+        aggregated = {}
+        
+        for key, value in local_patterns.items():
+            if key == 'peak_energy_hours':
+                # Convert [9, 10, 11] to "morning"
+                aggregated[key] = self._time_to_period(value)
+            elif key == 'task_success_rate':
+                # Add noise to rate
+                aggregated[key] = self.add_noise(value, epsilon=2.0)
+            else:
+                aggregated[key] = value
+        
+        return aggregated
+```
+
+### 12.4 Mobile Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Mobile Device                      │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐  │
+│  │         Flutter Application                  │  │
+│  └───────────────┬─────────────────────────────┘  │
+│                  │                                 │
+│  ┌───────────────▼──────────┐ ┌─────────────────┐ │
+│  │   Local Storage Layer    │ │  Sync Manager   │ │
+│  │   (SQLite + Vector)      │ │  (Differential) │ │
+│  └───────────────┬──────────┘ └────────┬────────┘ │
+│                  │                     │          │
+│  ┌───────────────▼─────────────────────▼────────┐ │
+│  │        Local AI Engine                       │ │
+│  │  • Context Manager (Rust FFI)                │ │
+│  │  • Pattern Detector (TinyBERT)               │ │
+│  │  • Llama 3.2 1B (optional, 600MB)            │ │
+│  └──────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────┘
+                         │
+                         │ WiFi sync only
+                         ▼
+              ┌──────────────────────┐
+              │    Cloud Backend     │
+              │   (FastAPI + DBs)    │
+              └──────────────────────┘
+```
+
+### 12.5 Performance Optimization for Personalization
+
+#### Caching Strategy
+```python
+from functools import lru_cache
+from datetime import datetime, timedelta
+import redis
+
+class ContextCache:
+    """Multi-level caching for user contexts"""
+    
+    def __init__(self, redis_client: redis.Redis):
+        self.redis = redis_client
+        self._memory_cache = {}
+    
+    async def get_context(self, user_id: str) -> Optional[UserContext]:
+        """Get context from cache (memory -> Redis -> DB)"""
+        
+        # Level 1: Memory cache
+        if user_id in self._memory_cache:
+            ctx, expires = self._memory_cache[user_id]
+            if expires > datetime.utcnow():
+                return ctx
+        
+        # Level 2: Redis cache
+        cached = await self.redis.get(f"context:{user_id}")
+        if cached:
+            ctx = UserContext.from_json(cached)
+            self._memory_cache[user_id] = (ctx, datetime.utcnow() + timedelta(minutes=5))
+            return ctx
+        
+        # Level 3: Database (cache miss)
+        return None
+    
+    async def set_context(self, user_id: str, context: UserContext) -> None:
+        """Store in all cache levels"""
+        expires = datetime.utcnow() + timedelta(minutes=5)
+        self._memory_cache[user_id] = (context, expires)
+        
+        await self.redis.setex(
+            f"context:{user_id}",
+            300,  # 5 minutes
+            context.to_json()
+        )
+```
+
+#### Batch Processing
+```python
+class BatchContextUpdater:
+    """Update contexts in batches for efficiency"""
+    
+    def __init__(self, batch_size: int = 100):
+        self.batch_size = batch_size
+        self._batch = []
+    
+    async def add_update(
+        self,
+        user_id: str,
+        context_type: str,
+        key: str,
+        value: Any
+    ) -> None:
+        """Add update to batch"""
+        self._batch.append({
+            'user_id': user_id,
+            'context_type': context_type,
+            'key': key,
+            'value': value,
+            'updated_at': datetime.utcnow()
+        })
+        
+        if len(self._batch) >= self.batch_size:
+            await self._flush()
+    
+    async def _flush(self) -> None:
+        """Flush batch to database"""
+        if not self._batch:
+            return
+        
+        # Bulk insert/update in single transaction
+        await self.db.executemany(
+            """
+            INSERT INTO user_contexts (user_id, context_type, key, value, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, context_type, key)
+            DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
+            """,
+            self._batch
+        )
+        
+        self._batch = []
+```
+
+## 13. Future Considerations
 
 ### 12.1 Mobile App Integration
 - Shared API between web and mobile

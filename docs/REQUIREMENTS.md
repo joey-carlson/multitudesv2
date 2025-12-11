@@ -99,7 +99,198 @@ Priority order for integration:
 - **Privacy-first**: All learning happens locally or with user-controlled data
 - **Explainable AI**: Users can understand why recommendations are made
 
-## 8. Non-Functional Requirements
+## 8. User Personalization & Learning Strategy
+
+### 8.1 Core Principle
+**The system must become more specialized to each user over time without losing user-specific context.** This is a key differentiator and selling point.
+
+### 8.2 Phased Implementation Approach
+
+#### Phase 1: Adaptive Prompt Templates (MVP - Months 0-3)
+**Implementation:**
+- Store user patterns and preferences in PostgreSQL
+- Dynamically construct AI prompts based on learned context
+- No model training required - instant personalization
+
+**Storage Requirements:**
+- User preferences: 1-2 KB per user
+- Persona definitions: 5-10 KB per user  
+- Learned patterns: 10-20 KB per user
+- Total: <50 KB per user
+
+**Benefits:**
+- Quick to implement (days not months)
+- Low cost ($1-3/user/month)
+- Immediate personalization
+- Easy to explain and debug
+
+**Example Context Stored:**
+```python
+{
+    "work_style": "analytical, detail-oriented",
+    "peak_energy_hours": [9, 10, 14, 15],
+    "communication_preferences": "direct, bullet points",
+    "learned_patterns": [
+        "Prefers 25-minute work blocks",
+        "Schedules creative tasks in morning",
+        "Responds best to specific deadlines"
+    ],
+    "task_completion_stats": {
+        "average_duration": "45min",
+        "success_rate": 0.82,
+        "preferred_categories": ["coding", "analysis"]
+    }
+}
+```
+
+#### Phase 2: RAG + Vector Embeddings (Months 3-6)
+**Implementation:**
+- Generate embeddings for all user interactions
+- Store in vector database or PostgreSQL with pgvector
+- Retrieve semantically relevant past contexts for AI prompts
+
+**Storage Requirements:**
+- ~5MB embeddings per 10,000 interactions
+- $0.10-0.50/month per user for storage
+- 50-100ms retrieval latency
+
+**Benefits:**
+- Deeper personalization through semantic understanding
+- Can find relevant patterns even from months ago
+- Explainable (show which past interactions influenced decisions)
+- Privacy-preserving (embeddings don't reveal raw text)
+
+**Technical Stack:**
+- Embedding model: text-embedding-3-small (OpenAI) or MiniLM
+- Storage: PostgreSQL with pgvector extension
+- Retrieval: Top-K semantic similarity search
+
+#### Phase 3: Local/Edge Learning (Months 6-12)
+**Implementation:**
+- Deploy lightweight models on user's device
+- Process patterns locally for privacy
+- Sync only aggregated insights to cloud
+
+**Mobile Optimization:**
+- Local model: Llama 3.2 1B (~600MB quantized)
+- On-device embeddings: MobileNet/TinyBERT (20-50MB)
+- Storage: SQLite with vector extension
+- Full offline capability
+
+**Benefits:**
+- True privacy (data stays on device)
+- Works offline (subway, airplane, etc.)
+- Reduced API costs ($0.10-0.50/user/month)
+- Faster inference (no network latency)
+
+### 8.3 Mobile-First Architecture
+
+**Critical Success Factor:** Design for eventual mobile deployment from day one.
+
+#### Storage Abstraction
+```python
+class StorageBackend(ABC):
+    """Portable storage that works on PostgreSQL or SQLite"""
+    @abstractmethod
+    def save_context(self, user_id, context): pass
+    @abstractmethod
+    def get_context(self, user_id): pass
+```
+
+#### Offline-First Features
+- Queue tasks when offline, sync on WiFi
+- Cache recent contexts (7 days) locally
+- Differential privacy for cloud sync
+- Progressive enhancement (works with/without AI)
+
+#### Mobile Storage Budget
+| Component | Size | Purpose |
+|-----------|------|---------|
+| Base App | 50MB | Flutter + UI |
+| Local Model (optional) | 600MB | Llama 3.2 1B |
+| User Data | 20MB | Contexts + embeddings |
+| Cache | 30MB | Recent interactions |
+| **Total** | **700MB** | Acceptable for modern devices |
+
+### 8.4 Context Persistence Strategy
+
+**Problem:** AI systems lose context over time, defeating personalization.
+
+**Solutions:**
+1. **Versioned Schemas**: Track how user data evolves
+   - Migrate old data to new formats
+   - Never lose historical context
+
+2. **Context Decay Weighting**: Recent interactions matter more
+   - Last 7 days: 1.0x weight
+   - Last 30 days: 0.7x weight
+   - Last 90 days: 0.4x weight
+   - Older: 0.2x weight (never zero)
+
+3. **Explicit Checkpointing**: Save persona states at key moments
+   - After user edits persona manually
+   - When major pattern detected
+   - Monthly automated snapshots
+
+4. **Feedback Loops**: Continuous learning from corrections
+   - "Was this helpful?" after every AI suggestion
+   - Track acceptance/rejection rates
+   - Adjust weights based on feedback
+
+5. **Semantic Deduplication**: Don't store redundant information
+   - Merge similar contexts via embedding similarity
+   - Keep most recent version of evolving patterns
+   - Reduce storage by 60-70%
+
+### 8.5 Privacy & Data Control
+
+**User Data Rights:**
+- Export all data in JSON format
+- Delete specific contexts or all data
+- Opt-out of cloud sync (local-only mode)
+- View what data influenced each AI decision
+
+**Security:**
+- End-to-end encryption for sync
+- Local data encrypted at rest
+- No telemetry without explicit consent
+- Open source core logic for auditability
+
+### 8.6 Cost Comparison by Approach
+
+| Approach | Storage/User | Compute/User | Total/Month | Implementation |
+|----------|--------------|--------------|-------------|----------------|
+| Fine-tuned Models | $5-10 | $20-50 | $25-60 | Not recommended |
+| RAG + Embeddings | $0.10 | $2-5 | $2.10-5.10 | Phase 2 |
+| Prompt Templates | $0.01 | $1-3 | $1.01-3.01 | Phase 1 ✓ |
+| Local Learning | $0 | $0.50 | $0.50 | Phase 3 (mobile) |
+
+### 8.7 Success Metrics for Personalization
+
+**Quantitative:**
+- Personalization accuracy: >80% correct persona detection
+- Recommendation acceptance rate: >60%
+- Time to valuable personalization: <1 week of usage
+- Context retention: 90% of patterns retained after 90 days
+
+**Qualitative:**
+- Users report feeling "understood" by the system
+- AI suggestions feel relevant and timely
+- Users trust the system with sensitive information
+- System adapts noticeably to changing patterns
+
+### 8.8 Competitive Differentiation
+
+**Unique Selling Points:**
+1. **Works offline**: Unlike Notion AI, ChatGPT, etc.
+2. **True learning**: Not just prompt engineering
+3. **Privacy-first**: Data stays local by default
+4. **Multi-persona**: Understands different modes of being
+5. **Long-term memory**: Doesn't forget your patterns
+
+**Tagline:** *"Your AI assistant that works on the subway and actually knows you."*
+
+## 9. Non-Functional Requirements
 
 ### 8.1 Performance
 - API response time: <100ms for standard requests
