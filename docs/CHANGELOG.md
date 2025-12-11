@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Comprehensive user personalization architecture documentation
+  - Phase 1: Adaptive Prompt Templates (current focus)
+  - Phase 2: RAG + Vector Embeddings (future)
+  - Phase 3: Local/Edge Learning for mobile (future)
+- Mobile-first architecture design
+  - Storage abstraction layer (PostgreSQL/SQLite compatible)
+  - Offline-first capabilities
+  - Differential sync protocol
+  - Privacy-preserving aggregation
+- Context persistence strategy with time-based decay weighting
+- Docker setup with PostgreSQL, InfluxDB, and Redis
+- Development environment automation scripts
+- Docker guide for beginners
+
 ### Planned
 - Persona discovery wizard
 - Apple Mail integration
