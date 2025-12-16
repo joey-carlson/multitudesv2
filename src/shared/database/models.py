@@ -124,27 +124,100 @@ class UserFeedbackDB(Base):
 
 
 class Persona(Base):
-    """Persona definitions"""
+    """
+    Persona definitions for Multitudes system.
+    
+    Represents one aspect of a user's multitudes with unique energy patterns,
+    strengths, weaknesses, and ideal tasks. Based on Multitudes v1 concept
+    enhanced with Peak-Trough-Recovery energy model.
+    """
     
     __tablename__ = "personas"
     
+    # Identity
     id = Column(String(32), primary_key=True, default=generate_uuid)
     user_id = Column(String(32), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
-    energy_patterns = Column(JSONB, nullable=True)  # Time-based energy levels
-    preferred_task_types = Column(ARRAY(String), nullable=True)
-    color_code = Column(String(7), nullable=True)  # Hex color
-    icon = Column(String(50), nullable=True)
+    emoji = Column(String(10), nullable=False, default="✨")
+    archetype = Column(String(50), nullable=False)  # professional, artist, etc.
+    
+    # Core characteristics (from Multitudes v1 template)
+    primary_energy = Column(Text, nullable=True)  # Core behavioral traits
+    strengths = Column(ARRAY(String), nullable=True)
+    weaknesses = Column(ARRAY(String), nullable=True)
+    trigger_conditions = Column(ARRAY(String), nullable=True)
+    ideal_tasks = Column(ARRAY(String), nullable=True)
+    
+    # Energy patterns (Peak-Trough-Recovery model) - stored as "HH:MM" strings
+    peak_start_time = Column(String(5), nullable=True)  # e.g., "09:00"
+    peak_end_time = Column(String(5), nullable=True)
+    trough_start_time = Column(String(5), nullable=True)
+    trough_end_time = Column(String(5), nullable=True)
+    recovery_start_time = Column(String(5), nullable=True)
+    recovery_end_time = Column(String(5), nullable=True)
+    
+    # Balance tracking
+    ideal_weekly_hours = Column(Float, default=0.0, nullable=False)
+    actual_weekly_hours = Column(Float, default=0.0, nullable=False)
+    
+    # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_active = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Relationships
     user = relationship("User", back_populates="personas")
     tasks = relationship("Task", back_populates="persona")
+    energy_readings = relationship("EnergyReading", back_populates="persona", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_personas_user_active", "user_id", "is_active"),
+        Index("idx_personas_archetype", "archetype"),
+    )
     
     def __repr__(self):
-        return f"<Persona(id={self.id}, name={self.name})>"
+        return f"<Persona(id={self.id}, name={self.name}, archetype={self.archetype})>"
+
+
+class EnergyReading(Base):
+    """
+    Time-series energy readings for personas.
+    
+    Tracks actual energy levels over time to refine predictions.
+    For high-volume time-series data, this could be moved to InfluxDB,
+    but starting in PostgreSQL for simplicity.
+    """
+    
+    __tablename__ = "energy_readings"
+    
+    id = Column(String(32), primary_key=True, default=generate_uuid)
+    persona_id = Column(String(32), ForeignKey("personas.id", ondelete="CASCADE"), nullable=False)
+    
+    # Measurement
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    energy_level = Column(Integer, nullable=False)  # 1-10 scale
+    confidence = Column(Float, default=0.5, nullable=False)  # 0.0-1.0
+    
+    # Source tracking
+    source = Column(String(50), default="manual", nullable=False)  # manual, inferred, scheduled, feedback
+    context = Column(JSONB, nullable=True)  # Additional context
+    notes = Column(Text, nullable=True)
+    
+    # Relationships
+    persona = relationship("Persona", back_populates="energy_readings")
+    
+    # Indexes and constraints
+    __table_args__ = (
+        Index("idx_energy_readings_persona_time", "persona_id", "timestamp"),
+        Index("idx_energy_readings_timestamp", "timestamp"),
+        CheckConstraint("energy_level >= 1 AND energy_level <= 10", name="check_energy_level_range"),
+        CheckConstraint("confidence >= 0.0 AND confidence <= 1.0", name="check_energy_confidence_range"),
+    )
+    
+    def __repr__(self):
+        return f"<EnergyReading(persona_id={self.persona_id}, timestamp={self.timestamp}, level={self.energy_level})>"
 
 
 class Task(Base):
