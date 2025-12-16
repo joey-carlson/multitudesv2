@@ -14,11 +14,36 @@ from .persona_models import (
     EnergyReading,
     PersonaArchetype,
     TriggerCondition,
+    ARCHETYPE_TEMPLATES,
+)
+from .persona_generator import (
+    PersonaGenerator,
+    generate_personas_from_survey,
+)
+from .survey_config import (
+    SurveyQuestion,
+    SurveyPhase,
+    ONBOARDING_SURVEY,
+    get_survey_config,
+    get_phase_by_id,
+    get_question_by_id,
 )
 
 __all__ = [
+    # Models
     "Persona",
     "EnergyReading",
     "PersonaArchetype",
     "TriggerCondition",
+    "ARCHETYPE_TEMPLATES",
+    # Generator
+    "PersonaGenerator",
+    "generate_personas_from_survey",
+    # Survey
+    "SurveyQuestion",
+    "SurveyPhase",
+    "ONBOARDING_SURVEY",
+    "get_survey_config",
+    "get_phase_by_id",
+    "get_question_by_id",
 ]
