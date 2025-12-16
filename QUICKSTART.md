@@ -35,7 +35,7 @@ Docker is required to run PostgreSQL, InfluxDB, and Redis.
 5. Wait for Docker to start (Docker icon appears in menu bar)
 
 **On Linux:**
-```bash
+```zsh
 # Ubuntu/Debian
 sudo apt-get update
 sudo apt-get install docker.io docker-compose
@@ -54,7 +54,7 @@ sudo usermod -aG docker $USER
 4. Start Docker Desktop from Start menu
 
 **Verify Docker is Running:**
-```bash
+```zsh
 docker --version
 docker-compose --version
 docker ps
@@ -69,7 +69,7 @@ You should see version numbers and no errors. The `docker ps` command should sho
 
 ### 1. Start Docker Services & Database
 
-```bash
+```zsh
 cd /Users/joecrls/Documents/Code/Multitudesv2
 
 # Start Docker services (PostgreSQL, InfluxDB, Redis)
@@ -84,7 +84,7 @@ This will:
 
 ### 2. Install Dependencies (if not done)
 
-```bash
+```zsh
 ./scripts/setup.sh
 ```
 
@@ -96,7 +96,7 @@ You need **two terminal windows**:
 
 ### Terminal 1: Start API Server (Port 2701)
 
-```bash
+```zsh
 cd /Users/joecrls/Documents/Code/Multitudesv2
 ./scripts/run-api.sh
 ```
@@ -111,7 +111,7 @@ You should see:
 
 ### Terminal 2: Start Dashboard (Port 2700)
 
-```bash
+```zsh
 cd /Users/joecrls/Documents/Code/Multitudesv2
 ./scripts/run-dashboard.sh
 ```
@@ -338,7 +338,7 @@ curl -X POST http://localhost:2701/api/feedback \
 
 If you see "Address already in use":
 
-```bash
+```zsh
 # Find process using port 2700 or 2701
 lsof -i :2700
 lsof -i :2701
@@ -375,7 +375,7 @@ ModuleNotFoundError: No module named 'fastapi'
 ```
 
 **Solution:**
-```bash
+```zsh
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -406,7 +406,7 @@ pip install -r requirements.txt
 
 ## Quick Commands Reference
 
-```bash
+```zsh
 # Start everything
 ./scripts/start-dev.sh          # Docker + DB migrations
 ./scripts/run-api.sh             # API server (2701)
