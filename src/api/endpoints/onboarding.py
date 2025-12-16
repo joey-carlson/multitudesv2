@@ -17,7 +17,6 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
-from src.api.models import User as UserResponse
 from src.shared.database.postgres_storage import get_db
 from src.shared.database.models import User, Persona as PersonaDB
 from src.core.personas import (
