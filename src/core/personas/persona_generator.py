@@ -99,9 +99,19 @@ class PersonaGenerator:
             )
             
             # Get ideal weekly hours for this persona
+            # Try custom name, template name, or archetype keyword
             ideal_hours = time_allocation.get(persona_name, 0.0)
             if ideal_hours == 0.0:
                 ideal_hours = time_allocation.get(template.default_name, 0.0)
+            if ideal_hours == 0.0:
+                # Try matching by archetype keyword (e.g., "Work" for Professional)
+                for key in time_allocation.keys():
+                    if "work" in key.lower() and archetype == PersonaArchetype.PROFESSIONAL:
+                        ideal_hours = time_allocation[key]
+                        break
+                    elif "creat" in key.lower() and archetype == PersonaArchetype.ARTIST:
+                        ideal_hours = time_allocation[key]
+                        break
             
             persona = self._create_persona_from_template(
                 template=template,
