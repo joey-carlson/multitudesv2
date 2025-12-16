@@ -13,10 +13,10 @@ from typing import List, Dict, Any
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
-from src.api.auth import get_current_user
 from src.api.models import User as UserResponse
 from src.shared.database.postgres_storage import get_db
 from src.shared.database.models import User, Persona as PersonaDB
@@ -79,9 +79,35 @@ async def get_survey() -> Dict[str, Any]:
     return get_survey_config()
 
 
+async def get_current_user_dep(
+    credentials = Depends(HTTPBearer())
+) -> str:
+    """Get current user from JWT token."""
+    from src.api.auth import decode_access_token
+    from fastapi import HTTPException, status as http_status
+    
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload"
+        )
+    
+    return user_id
+
+
 @router.get("/status")
 async def get_onboarding_status(
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: str = Depends(get_current_user_dep),
     db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -92,21 +118,21 @@ async def get_onboarding_status(
     # Query persona count for user
     result = await db.execute(
         "SELECT COUNT(*) FROM personas WHERE user_id = :user_id AND is_active = true",
-        {"user_id": current_user.id}
+        {"user_id": current_user}
     )
     persona_count = result.scalar()
     
     return {
         "completed": persona_count > 0,
         "persona_count": persona_count,
-        "user_id": current_user.id
+        "user_id": current_user
     }
 
 
 @router.post("/submit", response_model=OnboardingCompletionResponse)
 async def submit_onboarding(
     survey_data: SurveyResponse,
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: str = Depends(get_current_user_dep),
     db: AsyncSession = Depends(get_db)
 ) -> OnboardingCompletionResponse:
     """
@@ -117,7 +143,7 @@ async def submit_onboarding(
     try:
         # Generate personas from survey responses
         personas: List[PersonaModel] = generate_personas_from_survey(
-            user_id=current_user.id,
+            user_id=current_user,
             survey_responses=survey_data.responses
         )
         
@@ -200,7 +226,7 @@ async def submit_onboarding(
 
 @router.get("/personas", response_model=List[PersonaResponse])
 async def get_user_personas(
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: str = Depends(get_current_user_dep),
     db: AsyncSession = Depends(get_db)
 ) -> List[PersonaResponse]:
     """
@@ -215,7 +241,7 @@ async def get_user_personas(
         WHERE user_id = :user_id AND is_active = true
         ORDER BY created_at ASC
         """,
-        {"user_id": current_user.id}
+        {"user_id": current_user}
     )
     
     personas = result.fetchall()
