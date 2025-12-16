@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 # Multitudes v2.0 - Development Environment Setup Script
 
 set -e  # Exit on error

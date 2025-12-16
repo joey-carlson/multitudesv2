@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Run FastAPI application on port 2701
 

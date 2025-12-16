@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Run Streamlit dashboard on port 2700
 

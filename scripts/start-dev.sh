@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Multitudes Development Environment Startup Script
 # This script starts Docker services and runs database migrations
