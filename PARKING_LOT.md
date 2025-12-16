@@ -361,17 +361,212 @@ Provide meaningful insights into how the AI personalization is improving over ti
 
 ---
 
+## 5. Native Mobile & Web Application
+
+**Priority:** Low (Long-term)  
+**Status:** Not Started  
+**Prerequisites:** Core system must be rock solid first
+
+### Objective
+Transform the Streamlit dashboard into a professional native mobile application (iOS/Android) and responsive web app for seamless cross-platform access to Multitudes.
+
+### Current State
+- Streamlit dashboard is desktop/browser-focused
+- Not optimized for mobile touch interfaces
+- Limited offline capabilities
+- Not app store ready
+
+### Proposed Solution: Multi-Platform Application
+
+#### Platform Targets
+1. **iOS Native App** (Swift/SwiftUI or React Native)
+2. **Android Native App** (Kotlin or React Native)
+3. **Progressive Web App** (PWA) for desktop browsers
+4. **Tablet-optimized** interfaces for iPad/Android tablets
+
+#### Technology Options
+
+**Option A: React Native (Cross-platform)**
+- Single codebase for iOS/Android
+- FastAPI backend remains unchanged
+- Native look and feel on both platforms
+- Large ecosystem and community
+
+**Option B: Flutter (Cross-platform)**
+- Already in the project structure (aipa_project uses Flutter)
+- Excellent performance and native compilation
+- Beautiful Material Design and Cupertino widgets
+- Hot reload for rapid development
+
+**Option C: Native per Platform**
+- SwiftUI for iOS, Jetpack Compose for Android
+- Best performance and platform integration
+- More development effort (2x codebase)
+- Deepest native feature access
+
+**Recommendation:** Start with **Flutter** since project already has Flutter infrastructure
+
+#### Core Features for Mobile
+
+**Must-Have:**
+- Persona switching (quick tap to switch active persona)
+- Energy check-ins (log current energy level)
+- Task quick-add (voice or text)
+- Today's focus (which persona needs attention)
+- Quick balance view (visual persona health)
+- Notifications (persona reminders, energy alerts)
+
+**Nice-to-Have:**
+- Widget support (iOS Home Screen, Android Home)
+- Apple Watch / Wear OS complications
+- Siri / Google Assistant integration
+- Calendar integration (native)
+- Location-based persona triggers
+- Offline mode with sync
+
+#### UI/UX Considerations
+
+**Mobile-First Design:**
+- Thumb-friendly navigation
+- Swipe gestures (switch personas, dismiss notifications)
+- Large touch targets (44x44pt minimum)
+- Dark mode support
+- Haptic feedback
+- Portrait and landscape support
+
+**Visual Identity:**
+- Persona-specific color schemes
+- Emoji-driven persona identification
+- Clean, minimal interface
+- Smooth animations and transitions
+- Native platform conventions
+
+#### Technical Architecture
+
+```
+┌─────────────────────────────────────┐
+│   Flutter Mobile App (iOS/Android)  │
+│   - Persona UI                      │
+│   - Energy tracking                 │
+│   - Task management                 │
+│   - Local cache/offline             │
+└──────────┬──────────────────────────┘
+           │ REST API
+           │ (existing FastAPI)
+┌──────────▼──────────────────────────┐
+│   Backend Services                  │
+│   - Authentication (JWT)            │
+│   - Persona CRUD                    │
+│   - Energy readings                 │
+│   - Task management                 │
+│   - PostgreSQL + InfluxDB           │
+└─────────────────────────────────────┘
+```
+
+#### Development Phases
+
+**Phase A: API Stabilization**
+- Ensure all REST endpoints are mobile-friendly
+- Add pagination for large datasets
+- Optimize for mobile network conditions
+- Add offline-first sync capabilities
+
+**Phase B: Core Mobile App**
+- Authentication flow
+- Persona management
+- Basic task operations
+- Energy logging
+- Dashboard view
+
+**Phase C: Enhanced Features**
+- Push notifications
+- Widget support
+- Apple Watch / Wear OS
+- Offline mode
+- Voice commands
+
+**Phase D: App Store Launch**
+- Beta testing (TestFlight / Play Store Beta)
+- App store optimization (screenshots, description)
+- Privacy policy and terms
+- App store submission
+- Marketing materials
+
+#### App Store Requirements
+
+**iOS App Store:**
+- Apple Developer account ($99/year)
+- App privacy details
+- App review guidelines compliance
+- TestFlight beta testing
+- Screenshots for all device sizes
+
+**Google Play Store:**
+- Google Play Console account ($25 one-time)
+- Privacy policy URL
+- Content rating questionnaire
+- Store listing details
+- APK/AAB upload
+
+#### Monetization Considerations
+- Free tier: Basic persona tracking (3 personas max)
+- Premium tier: Unlimited personas, advanced analytics, cloud sync
+- In-app purchases: Additional features, themes
+- Subscription model: Monthly/yearly premium access
+
+#### Privacy & Security
+- All API calls over HTTPS
+- JWT token storage in secure keychain
+- Biometric authentication (Face ID, Touch ID, fingerprint)
+- Local encryption for sensitive data
+- GDPR compliance for EU users
+- Data export and deletion
+
+### Success Metrics
+- App store rating > 4.5 stars
+- Daily active users retention > 60%
+- Session length > 5 minutes
+- Feature usage balance across personas
+- Positive user reviews mentioning "life-changing"
+
+### Estimated Timeline
+- **Planning & Design:** 2-3 weeks
+- **Core Development:** 8-12 weeks
+- **Testing & Refinement:** 3-4 weeks
+- **App Store Submission:** 1-2 weeks
+- **Total:** 3-4 months for v1.0 mobile app
+
+### Dependencies
+- ✅ Stable FastAPI backend
+- ✅ Clear persona data models
+- ✅ Comprehensive testing
+- ⏳ User feedback from web version
+- ⏳ Design system documentation
+
+### Research & Inspiration
+- **Apps to Study:**
+  - Notion (cross-platform excellence)
+  - Things 3 (beautiful task management)
+  - Calm (wellness tracking)
+  - Streaks (habit tracking)
+  - Day One (journaling with personality)
+
+---
+
 ## Implementation Priority
 
 ### Phase 1 (Immediate)
 1. Remote hosting setup (enable tester access)
-2. User-friendly onboarding survey
+2. User-friendly onboarding survey ← **IN PROGRESS**
 
 ### Phase 2 (Near-term)
 3. Simplified feedback interface
 
 ### Phase 3 (Future)
 4. Enhanced statistics & analytics
+
+### Phase 4 (Long-term)
+5. Native mobile & web application
 
 ---
 
