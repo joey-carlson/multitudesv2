@@ -39,7 +39,7 @@ class PostgresContextStorage:
         if database_url is None:
             database_url = os.getenv(
                 "DATABASE_URL",
-                "postgresql+asyncpg://multitudes:multitudes@localhost:5432/multitudes_db"
+                "postgresql+asyncpg://multitudes:multitudes_dev_password@localhost:5432/multitudes_db"
             )
         
         # Convert to async if needed

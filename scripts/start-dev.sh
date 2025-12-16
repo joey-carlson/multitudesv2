@@ -8,8 +8,8 @@ set -e  # Exit on error
 echo "🚀 Starting Multitudes Development Environment..."
 echo ""
 
-# Get script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get script directory (zsh compatible)
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"

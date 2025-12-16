@@ -20,7 +20,7 @@ config = context.config
 # Override sqlalchemy.url with environment variable if present
 db_url = os.getenv(
     "DATABASE_URL",
-    "postgresql://multitudes:multitudes@localhost:5432/multitudes_db"
+    "postgresql://multitudes:multitudes_dev_password@localhost:5432/multitudes_db"
 )
 config.set_main_option("sqlalchemy.url", db_url)
 
