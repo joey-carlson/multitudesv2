@@ -14,7 +14,6 @@ An AI personal assistant with **adaptive personalization** that learns from your
 
 ## Prerequisites
 
-- Docker Desktop installed and running
 - Python 3.9+
 - Git
 
@@ -22,7 +21,53 @@ An AI personal assistant with **adaptive personalization** that learns from your
 
 ## Setup (One-Time)
 
-### 1. Start Docker & Database
+### 0. Install & Start Docker Desktop
+
+Docker is required to run PostgreSQL, InfluxDB, and Redis.
+
+**Install Docker Desktop:**
+
+**On macOS:**
+1. Download Docker Desktop from https://www.docker.com/products/docker-desktop/
+2. Open the downloaded .dmg file
+3. Drag Docker to Applications folder
+4. Open Docker from Applications
+5. Wait for Docker to start (Docker icon appears in menu bar)
+
+**On Linux:**
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install docker.io docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add your user to docker group (to run without sudo)
+sudo usermod -aG docker $USER
+# Log out and back in for this to take effect
+```
+
+**On Windows:**
+1. Download Docker Desktop from https://www.docker.com/products/docker-desktop/
+2. Run the installer
+3. Restart your computer if prompted
+4. Start Docker Desktop from Start menu
+
+**Verify Docker is Running:**
+```bash
+docker --version
+docker-compose --version
+docker ps
+```
+
+You should see version numbers and no errors. The `docker ps` command should show an empty list (or running containers if you have any).
+
+**If Docker Desktop won't start:**
+- On macOS: Check System Preferences > Security & Privacy
+- On Windows: Ensure virtualization is enabled in BIOS
+- On all platforms: Check Docker Desktop logs in the app
+
+### 1. Start Docker Services & Database
 
 ```bash
 cd /Users/joecrls/Documents/Code/Multitudesv2
