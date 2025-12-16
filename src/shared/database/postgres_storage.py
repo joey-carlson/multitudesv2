@@ -334,3 +334,30 @@ class PostgresContextStorage:
     async def close(self):
         """Close database connections"""
         await self.engine.dispose()
+
+
+# Global storage instance for FastAPI dependency injection
+_storage_instance: Optional[PostgresContextStorage] = None
+
+
+def get_storage() -> PostgresContextStorage:
+    """Get global storage instance"""
+    global _storage_instance
+    if _storage_instance is None:
+        _storage_instance = PostgresContextStorage()
+    return _storage_instance
+
+
+async def get_db():
+    """
+    FastAPI dependency for database sessions.
+    
+    Usage:
+        @router.get("/example")
+        async def example(db: AsyncSession = Depends(get_db)):
+            # Use db session here
+            pass
+    """
+    storage = get_storage()
+    async with storage.get_session() as session:
+        yield session
