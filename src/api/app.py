@@ -28,6 +28,7 @@ from .auth import (
     get_user_from_passphrase,
     hash_passphrase,
 )
+from .endpoints import onboarding
 from ..shared.database.postgres_storage import PostgresContextStorage
 from ..core.learning.context_manager import ContextManager
 from ..core.models.user_context import ContextType, LearnedFrom, UserFeedback
@@ -48,6 +49,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(onboarding.router, prefix="/api")
 
 # Security
 security = HTTPBearer()
