@@ -1,0 +1,436 @@
+# Multitudes v2.0 - Cline Development Rules
+
+## 00-general
+As you're working, periodically re-read this ClineRules doc to stay aware of any updates/changes to these rules.
+You are an expert code developer who follows general best practices for software development.
+Before proposing a solution, consider alternatives. Is there a better solution?
+Design code for readability. Don't be overly complex nor overly simple.
+Be concise but complete with documentation and commentary. Don't include the same documentation in more than one place.
+When asked to create a feature, consider if there are better options and recommend them.
+Follow the design cycle:
+```
+flowchart TD
+   design --> implement --> test --> evaluate
+```
+Optimize for maintainability and configurability from the start.
+Keep changes small and discrete to avoid token throttling issues.
+
+We maintain clear documentation with versioned updates:
+- REQUIREMENTS.md: User/business level requirements
+- ARCHITECTURE.md: Design and technical architecture decisions
+- README.md: Setup and usage instructions
+- CHANGELOG.md: Version history with semantic versioning (x.y.z)
+
+Changes should be versioned and appended above existing content for each doc section. Do not overwrite historical updates.
+Monitor git status regularly to ensure local and remote repositories remain synced with no lingering pending commits.
+
+## Unit Testing Strategy
+Try to produce "3 line" tests. These are very short, readable, and easy to modify.
+**Arrange** - Set up the scene. Use supporting helper functions to construct objects in a manner needed for the test. This should strive for "one line" but may be a few lines. Complicated logic should be delegated to helper construction methods, fixtures etc.
+**Act** - Perform one action on the "unit under test". This is typically a function call.
+**Assert** - Check output, side effects
+
+Example:
+```python
+def test_persona_energy_prediction():
+    # Arrange
+    persona = create_test_persona(energy_patterns={"morning": 5})
+    # Act
+    predicted = persona.predict_energy(time="09:00")
+    # Assert
+    assert predicted == 5
+```
+
+## The Gist Test
+Typically a single test, gist testing tests as much of the primary functionality as possible in a single test. They are fast to write, and both showcase and test the fundamental functionality of the system. These can incorporate multiple components from the system or can be gists for one individual component. The intention is to cover critical code quickly and simply, ensuring fundamentally correct functionality with minimal code.
+
+Example:
+```python
+def test_complete_user_journey_gist():
+    """Test: Create user -> Add persona -> Sync data -> Generate insight"""
+    # Complete flow in one test with multiple soft and hard assertions
+```
+
+Where applicable, all testing should incorporate fuzz testing best practices.
+
+## 01-platform-mac
+You are running on Mac platform.
+Prefer to use Zsh for command line actions and cron for scheduled actions.
+Consider Mac-specific integrations: Apple Mail, Apple Calendar via AppleScript/EventKit.
+
+## 02-solid
+Follow SOLID design principles for OO development, focusing primarily on:
+- **Single Purpose**: Each class/function should have one clear responsibility
+- **Open/Closed**: Open for extension, closed for modification
+- **Interface Segregation**: Many specific interfaces better than one general-purpose interface
+- Prefer composition (with interface segregation) over inheritance
+- Don't repeat code. If code is not relevant to the class, it should be in a utility or helper function/class.
+
+## 03-python
+Follow PEP8 standards.
+When running python on the CLI (e.g., for testing), you must activate the .venv in the root of the project first:
+```bash
+source .venv/bin/activate
+```
+All modules should be PyPA compliant.
+Use type hinting throughout the codebase:
+```python
+from typing import Optional, List
+from datetime import datetime
+
+def get_persona_energy(persona_id: str, timestamp: datetime) -> Optional[int]:
+    ...
+```
+Avoid using generic dictionaries. Use dataclasses or Pydantic models instead:
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Persona:
+    id: str
+    name: str
+    energy_patterns: dict
+```
+
+## 04-pytest
+When testing features, write permanent tests with pytest.
+Do not write ephemeral tests to validate changes. Write something that can be used long-term to validate the functionality.
+Tests do not need to be elaborate or exhaustive, but should be complete and concise if possible.
+Use parameterized tests where possible:
+```python
+@pytest.mark.parametrize("time,expected_energy", [
+    ("09:00", 5),
+    ("14:00", 3),
+    ("22:00", 2)
+])
+def test_energy_by_time(time: str, expected_energy: int):
+    ...
+```
+
+Use fixtures for common test setup:
+```python
+@pytest.fixture
+def test_persona():
+    return Persona(
+        id="test-1",
+        name="Test Persona",
+        energy_patterns={"morning": 5, "afternoon": 3, "evening": 2}
+    )
+```
+
+## 05-multitudes-domain
+This project is a personal AI assistant focused on persona-based productivity optimization.
+
+Key architectural principles to always consider:
+- **Persona-Centric Design**: Everything revolves around user personas
+- **Energy-Aware Scheduling**: Tasks are assigned based on energy levels and time of day
+- **Learning System**: The system continuously learns from user behavior
+- **Balance Tracking**: Monitor which personas are over/under-served
+- **Privacy-First**: All sensitive data must be encrypted, never logged in plaintext
+
+Core domain concepts:
+- **Persona**: A distinct aspect of the user's identity with unique energy patterns and preferences
+- **Task**: An action item assigned to a specific persona with energy and priority requirements
+- **Energy Reading**: Time-series data tracking energy levels per persona
+- **Insight**: AI-generated recommendation or observation about user patterns
+
+## 06-fastapi
+All API endpoints must:
+- Use FastAPI with proper type hints and Pydantic models
+- Include comprehensive error handling with appropriate HTTP status codes
+- Have OpenAPI documentation with examples
+- Use dependency injection for database connections and authentication
+- Return consistent error response format using shared models
+- Include request/response logging using structured logger
+- Implement rate limiting (100 requests/minute per user)
+
+For authentication, use JWT tokens with 1-hour expiration:
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
+security = HTTPBearer()
+
+async def get_current_user(token: str = Depends(security)):
+    # Verify JWT token
+    ...
+```
+
+Example endpoint structure:
+```python
+@router.post("/personas", response_model=PersonaResponse)
+async def create_persona(
+    persona: PersonaCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> PersonaResponse:
+    """Create a new persona for the current user."""
+    ...
+```
+
+## 07-databases
+Database usage patterns:
+- **PostgreSQL**: User profiles, personas, tasks, relationships, configuration
+- **InfluxDB**: Time-series data (energy readings, task metrics, persona balance)
+- **Vector DB (Future)**: Embeddings for semantic search and AI learning
+
+Always use connection pooling from src/shared/database/
+Use proper transactions for PostgreSQL operations:
+```python
+async with db.begin():
+    # Database operations here
+    await db.commit()
+```
+
+For InfluxDB, batch writes when possible for efficiency:
+```python
+with client.write_api(write_options=SYNCHRONOUS) as write_api:
+    write_api.write(bucket=bucket, record=points)
+```
+
+Never mix time-series data in PostgreSQL or relational data in InfluxDB.
+Use Alembic for all PostgreSQL schema changes.
+
+## 08-data-extractors
+Data extractor implementations must follow these patterns:
+- Inherit from `BaseExtractor` interface
+- Implement async methods for non-blocking I/O
+- Handle rate limiting and API quotas gracefully
+- Use exponential backoff for retries
+- Log errors without exposing sensitive data
+- Store credentials encrypted via `src/shared/config/secrets.py`
+
+Priority order for data sources:
+1. Apple Mail (highest priority)
+2. Apple Calendar
+3. Outlook Mail
+4. Outlook Calendar
+5. Gmail
+6. Google Calendar
+
+Example extractor structure:
+```python
+class AppleMailExtractor(BaseExtractor):
+    async def extract(self, since: datetime) -> List[Message]:
+        """Extract messages from Apple Mail since given timestamp."""
+        try:
+            # Implementation
+            ...
+        except RateLimitError:
+            # Handle with exponential backoff
+            ...
+```
+
+## 09-security
+Security requirements for all code:
+- JWT tokens must have expiration and refresh logic
+- Never log sensitive data (emails, calendar content, credentials)
+- All user input must be validated with Pydantic models
+- Database queries must use parameterized statements (SQLAlchemy handles this)
+- API endpoints must have rate limiting
+- Passwords must be hashed with bcrypt
+- Environment variables for all secrets (no hardcoding)
+- CORS configuration must be restrictive
+- All user input fields must be hardened against:
+  - Injection attacks
+  - Overlarge/null/negative values
+  - Denial of service input rate attacks
+
+Example credential handling:
+```python
+from cryptography.fernet import Fernet
+from src.shared.config.secrets import encrypt_credential, decrypt_credential
+
+# Never store plaintext credentials
+encrypted = encrypt_credential(api_key)
+```
+
+## 10-persona-learning
+AI/ML patterns specific to persona management:
+- **Pattern Recognition**: Use embeddings to identify similar tasks and behaviors
+- **Energy Prediction**: Learn user's energy patterns over time using time-series analysis
+- **Task Classification**: Automatically categorize tasks by persona affinity
+- **Feedback Loops**: Learn from user corrections and adjustments
+- **Explainable AI**: Always provide reasoning for recommendations
+
+When using OpenAI API:
+- Use GPT-4-turbo for complex reasoning tasks
+- Use text-embedding-ada-002 for embeddings
+- Implement token counting to stay within limits
+- Cache responses where appropriate
+- Handle API errors gracefully with fallbacks
+
+Example learning pattern:
+```python
+async def detect_active_persona(
+    user_id: str,
+    context: dict,
+    db: AsyncSession
+) -> Optional[Persona]:
+    """Detect which persona is currently active based on context."""
+    # Use time of day, recent activities, calendar events
+    # Return most likely persona with confidence score
+    ...
+```
+
+## 11-streamlit-dashboard
+Streamlit web dashboard patterns:
+- Use session state for stateful interactions
+- Implement proper error handling with user-friendly messages
+- Use caching decorators for expensive operations:
+```python
+@st.cache_data(ttl=3600)
+def load_personas(user_id: str) -> List[Persona]:
+    ...
+```
+- Organize UI into logical tabs/sections
+- Use components from src/web/components/ for reusability
+- Implement real-time updates where appropriate
+- Follow consistent styling and color schemes per personas
+
+## 12-testing-strategy
+Comprehensive testing approach:
+- **Unit Tests**: Test individual functions and classes in isolation
+- **Integration Tests**: Test database operations and API endpoints
+- **Gist Tests**: Test complete user journeys end-to-end
+- **Fixture-Based**: Use pytest fixtures for common test data
+- **Mocked External APIs**: Never hit real external APIs in tests
+
+Test organization:
+```
+tests/
+├── unit/
+│   ├── test_personas.py
+│   ├── test_scheduler.py
+│   └── test_learning.py
+├── integration/
+│   ├── test_api_endpoints.py
+│   └── test_database.py
+└── fixtures/
+    ├── personas.py
+    └── tasks.py
+```
+
+Minimum test coverage: 80% overall, 90% for core domain logic.
+
+## 13-git-workflow
+Git workflow and commit standards:
+- Follow Conventional Commits specification:
+  - `feat:` New feature
+  - `fix:` Bug fix
+  - `docs:` Documentation changes
+  - `test:` Test additions/modifications
+  - `refactor:` Code refactoring
+  - `chore:` Maintenance tasks
+  
+- Commit messages should be clear and descriptive:
+```bash
+git commit -m "feat(personas): add energy prediction algorithm"
+git commit -m "fix(api): handle missing persona_id in task creation"
+```
+
+- Never force push to main branch
+- Create feature branches for new work: `feature/persona-detection`
+- Keep commits atomic and focused on single changes
+
+## 14-documentation
+Documentation standards:
+- All public functions/classes must have docstrings:
+```python
+def calculate_persona_balance(persona: Persona, timeframe: str) -> float:
+    """
+    Calculate the balance score for a persona over a given timeframe.
+    
+    Args:
+        persona: The persona to calculate balance for
+        timeframe: Time period ('day', 'week', 'month')
+        
+    Returns:
+        Balance score between 0.0 (undernourished) and 1.0 (optimal)
+        
+    Raises:
+        ValueError: If timeframe is invalid
+    """
+    ...
+```
+
+- Update CHANGELOG.md with every significant change
+- Keep README.md current with setup instructions
+- Document API changes in OpenAPI schemas
+- Add inline comments for complex logic only
+
+## 15-performance
+Performance optimization guidelines:
+- API response time target: <100ms for standard requests
+- Dashboard load time target: <2 seconds
+- Database queries should use appropriate indexes
+- Use async/await for I/O-bound operations
+- Implement connection pooling for all databases
+- Cache frequently accessed data with Redis (future)
+- Batch database operations when possible
+- Use lazy loading for large datasets
+
+Example optimization:
+```python
+# Good: Batch insert
+async def create_multiple_tasks(tasks: List[TaskCreate], db: AsyncSession):
+    db_tasks = [Task(**task.dict()) for task in tasks]
+    db.add_all(db_tasks)
+    await db.commit()
+    
+# Bad: Loop with individual commits
+for task in tasks:
+    db_task = Task(**task.dict())
+    db.add(db_task)
+    await db.commit()  # Don't do this!
+```
+
+## 16-error-handling
+Error handling standards:
+- Use specific exception types, not generic Exception
+- Always provide context in error messages
+- Log errors with appropriate severity levels
+- Return user-friendly error messages via API
+- Never expose internal implementation details in errors
+
+Example:
+```python
+from src.shared.logging import logger
+
+try:
+    persona = await get_persona(persona_id)
+    if not persona:
+        raise PersonaNotFoundError(f"Persona {persona_id} not found")
+except PersonaNotFoundError as e:
+    logger.warning(f"Persona lookup failed: {e}")
+    raise HTTPException(
+        status_code=404,
+        detail="The requested persona could not be found"
+    )
+except Exception as e:
+    logger.error(f"Unexpected error in persona lookup: {e}")
+    raise HTTPException(
+        status_code=500,
+        detail="An unexpected error occurred"
+    )
+```
+
+---
+
+## Project-Specific Notes
+
+This project is designed to be a commercial product with:
+- Freemium business model planned
+- Mobile app development roadmap (Flutter)
+- Privacy-first architecture (local-first data storage)
+- Scalable backend for potential SaaS offering
+
+Always keep these long-term goals in mind when making architectural decisions. Avoid decisions that would make mobile integration or scaling difficult later.
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0.0 | 2025-12-08 | Initial | Created ClineRules for Multitudes v2.0 |

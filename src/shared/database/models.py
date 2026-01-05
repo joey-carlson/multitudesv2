@@ -28,8 +28,8 @@ Base = declarative_base()
 
 
 def generate_uuid():
-    """Generate UUID for primary keys"""
-    return str(uuid.uuid4())
+    """Generate UUID for primary keys - 32 chars without dashes"""
+    return str(uuid.uuid4()).replace("-", "")
 
 
 class User(Base):

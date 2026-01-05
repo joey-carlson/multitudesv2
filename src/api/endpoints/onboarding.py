@@ -114,12 +114,15 @@ async def get_onboarding_status(
     
     Returns whether user has personas set up.
     """
-    # Query persona count for user
+    from sqlalchemy import select, func
+    
+    # Query persona count for user using ORM
     result = await db.execute(
-        "SELECT COUNT(*) FROM personas WHERE user_id = :user_id AND is_active = true",
-        {"user_id": current_user}
+        select(func.count(PersonaDB.id))
+        .where(PersonaDB.user_id == current_user)
+        .where(PersonaDB.is_active == True)
     )
-    persona_count = result.scalar()
+    persona_count = result.scalar() or 0
     
     return {
         "completed": persona_count > 0,
@@ -168,7 +171,7 @@ async def submit_onboarding(
                 user_id=persona.user_id,
                 name=persona.name,
                 emoji=persona.emoji,
-                archetype=persona.archetype.value,
+                archetype=persona.archetype,  # Remove .value since it's already a string
                 primary_energy=persona.primary_energy,
                 strengths=persona.strengths,
                 weaknesses=persona.weaknesses,
@@ -233,26 +236,26 @@ async def get_user_personas(
     
     Returns list of user's active personas.
     """
+    from sqlalchemy import select
+    
+    # Use ORM query instead of raw SQL
     result = await db.execute(
-        """
-        SELECT id, name, emoji, archetype, primary_energy, ideal_weekly_hours
-        FROM personas
-        WHERE user_id = :user_id AND is_active = true
-        ORDER BY created_at ASC
-        """,
-        {"user_id": current_user}
+        select(PersonaDB)
+        .where(PersonaDB.user_id == current_user)
+        .where(PersonaDB.is_active == True)
+        .order_by(PersonaDB.created_at.asc())
     )
     
-    personas = result.fetchall()
+    personas = result.scalars().all()
     
     return [
         PersonaResponse(
-            id=row[0],
-            name=row[1],
-            emoji=row[2],
-            archetype=row[3],
-            primary_energy=row[4] or "",
-            ideal_weekly_hours=row[5]
+            id=persona.id,
+            name=persona.name,
+            emoji=persona.emoji,
+            archetype=persona.archetype,
+            primary_energy=persona.primary_energy or "",
+            ideal_weekly_hours=persona.ideal_weekly_hours
         )
-        for row in personas
+        for persona in personas
     ]

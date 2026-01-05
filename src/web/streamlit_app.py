@@ -1,22 +1,67 @@
 """
-Streamlit Dashboard for Multitudes.
+Multitudes Dashboard - Main Application
 
-Multi-user testing interface for adaptive context learning.
-Runs on port 2700.
+Your Personal AI Assistant Dashboard
 """
 
 import streamlit as st
 import requests
 from datetime import datetime
 import json
+from typing import Optional
+from streamlit.components.v1 import html
 
 # API Configuration
-API_URL = "http://localhost:2701"
+API_URL = "http://localhost:8001"
 
-# Page configuration
+# Session persistence helpers
+def save_session_to_storage(token: str, user_id: str, display_name: str):
+    """Save session data to browser localStorage"""
+    js_code = f"""
+    <script>
+        localStorage.setItem('multitudes_token', '{token}');
+        localStorage.setItem('multitudes_user_id', '{user_id}');
+        localStorage.setItem('multitudes_display_name', '{display_name}');
+    </script>
+    """
+    html(js_code, height=0)
+
+def load_session_from_storage():
+    """Load session data from browser localStorage"""
+    js_code = """
+    <script>
+        const token = localStorage.getItem('multitudes_token');
+        const user_id = localStorage.getItem('multitudes_user_id'); 
+        const display_name = localStorage.getItem('multitudes_display_name');
+        
+        if (token && user_id && display_name) {
+            // Send data back to Streamlit
+            window.parent.postMessage({
+                type: 'streamlit:sessionData',
+                token: token,
+                user_id: user_id,
+                display_name: display_name
+            }, '*');
+        }
+    </script>
+    """
+    html(js_code, height=0)
+
+def clear_session_storage():
+    """Clear session data from browser localStorage"""
+    js_code = """
+    <script>
+        localStorage.removeItem('multitudes_token');
+        localStorage.removeItem('multitudes_user_id');
+        localStorage.removeItem('multitudes_display_name');
+    </script>
+    """
+    html(js_code, height=0)
+
+# Page configuration  
 st.set_page_config(
-    page_title="Multitudes - Context Learning Dashboard",
-    page_icon="🧠",
+    page_title="🏠 Dashboard - Multitudes",
+    page_icon="🏠", 
     layout="wide",
 )
 
@@ -28,8 +73,27 @@ if "user_id" not in st.session_state:
 if "display_name" not in st.session_state:
     st.session_state.display_name = None
 
+# Check URL parameters for session restoration
+query_params = st.query_params
+if "token" in query_params and not st.session_state.token:
+    # Attempt to restore session from URL parameters
+    token = query_params.get("token")
+    if token:
+        # Verify token with API
+        try:
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(f"{API_URL}/auth/me", headers=headers)
+            if response.status_code == 200:
+                user_info = response.json()
+                st.session_state.token = token
+                st.session_state.user_id = user_info["user_id"]
+                st.session_state.display_name = user_info["display_name"]
+        except:
+            # Invalid token, ignore
+            pass
 
-def api_call(endpoint: str, method: str = "GET", data: dict = None, auth_required: bool = True):
+
+def api_call(endpoint: str, method: str = "GET", data: Optional[dict] = None, auth_required: bool = True):
     """Make API call with authentication"""
     headers = {}
     
@@ -111,7 +175,16 @@ quantum-dolphin-jazz      →  Test User 5
                 st.session_state.token = data["access_token"]
                 st.session_state.user_id = data["user_id"]
                 st.session_state.display_name = data.get("display_name")
+                # Save session to browser storage for persistence
+                save_session_to_storage(
+                    st.session_state.token,
+                    st.session_state.user_id,
+                    st.session_state.display_name or "User"
+                )
+                # Set URL parameter for session persistence on browser refresh
+                st.query_params["token"] = st.session_state.token
                 st.success(f"✅ Logged in as {st.session_state.display_name}")
+                st.info("💡 **Tip:** Bookmark this page - you'll stay logged in when you refresh or return!")
                 st.rerun()
 
 
@@ -124,10 +197,45 @@ def dashboard_page():
         st.title(f"Welcome, {st.session_state.display_name}!")
     with col3:
         if st.button("🚪 Logout"):
+            # Clear both session state and browser storage
+            clear_session_storage()
             st.session_state.token = None
             st.session_state.user_id = None
             st.session_state.display_name = None
+            st.session_state.session_loaded = False
+            # Clear URL parameters
+            if "token" in st.query_params:
+                del st.query_params["token"]
             st.rerun()
+    
+    # Check onboarding status and provide guidance
+    onboarding_data, error = api_call("/api/onboarding/status")
+    if not error and onboarding_data:
+        if not onboarding_data.get("completed", False):
+            st.warning("👋 **Get Started!** Complete your persona discovery to unlock Multitudes.")
+            st.info("👉 Click **🎭 Onboarding** in the sidebar to set up your personas")
+            st.markdown("---")
+        else:
+            # Show personas in a clean table
+            personas_data, personas_error = api_call("/api/onboarding/personas")
+            if not personas_error and personas_data:
+                st.success(f"✨ **Your {len(personas_data)} Persona(s):**")
+                
+                # Create table data
+                import pandas as pd
+                
+                table_data = []
+                for persona in personas_data:
+                    table_data.append({
+                        "Persona": f"{persona['emoji']} {persona['name']}",
+                        "Archetype": persona['archetype'].title(),
+                        "Primary Energy": persona['primary_energy'] if persona['primary_energy'] else "Not set",
+                        "Weekly Hours": f"{persona['ideal_weekly_hours']:.1f}h"
+                    })
+                
+                df = pd.DataFrame(table_data)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            st.markdown("---")
     
     st.markdown("---")
     

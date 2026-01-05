@@ -1,8 +1,8 @@
 #!/bin/zsh
 
-# Run Streamlit dashboard on port 2700
+# Run Streamlit dashboard on port 8502
 
-echo "🎨 Starting Multitudes Dashboard on port 2700..."
+echo "🎨 Starting Multitudes Dashboard on port 8502..."
 echo ""
 
 cd "$(dirname "$0")/.."
@@ -16,10 +16,10 @@ fi
 source .venv/bin/activate
 
 echo "Starting Streamlit dashboard..."
-echo "Access at: http://localhost:2700"
+echo "Access at: http://localhost:8502"
 echo ""
-echo "⚠️  Make sure the API is running on port 2701!"
+echo "⚠️  Make sure the API is running on port 8001!"
 echo "   Run ./scripts/run-api.sh in another terminal"
 echo ""
 
-streamlit run src/web/streamlit_app.py --server.port 2700 --server.address localhost
+streamlit run src/web/streamlit_app.py --server.port 8502 --server.address localhost

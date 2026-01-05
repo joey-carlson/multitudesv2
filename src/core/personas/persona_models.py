@@ -84,7 +84,7 @@ class Persona:
     Enhanced with Peak-Trough-Recovery energy patterns.
     """
     # Identity
-    id: str = field(default_factory=lambda: str(uuid4()))
+    id: str = field(default_factory=lambda: str(uuid4()).replace("-", ""))
     user_id: str = ""
     name: str = ""  # e.g., "Executive Emma", "The Artist"
     emoji: str = "✨"  # Visual identifier
@@ -191,7 +191,7 @@ class EnergyReading:
     Used to track actual energy levels over time and refine predictions.
     """
     # Identity
-    id: str = field(default_factory=lambda: str(uuid4()))
+    id: str = field(default_factory=lambda: str(uuid4()).replace("-", ""))
     persona_id: str = ""
     
     # Measurement

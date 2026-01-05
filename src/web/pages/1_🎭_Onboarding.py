@@ -9,15 +9,20 @@ import requests
 from typing import Dict, Any, List
 
 # API configuration
-API_BASE_URL = "http://localhost:2701"
+API_BASE_URL = "http://localhost:8001"
 
 
 def check_authentication():
     """Ensure user is authenticated"""
-    if "access_token" not in st.session_state:
-        st.error("Please log in from the Home page first")
+    # Initialize session state if needed (for page navigation)
+    if "token" not in st.session_state:
+        st.session_state.token = None
+    
+    if not st.session_state.token:
+        st.error("🔒 Please log in from the Home page first")
+        st.info("👉 Click 'Multitudes' in the sidebar to return to login")
         st.stop()
-    return st.session_state.access_token
+    return st.session_state.token
 
 
 def check_onboarding_status(token: str) -> Dict[str, Any]:
@@ -72,11 +77,15 @@ def show_completed_onboarding(status: Dict[str, Any]):
     """Show completion message for users who already completed onboarding"""
     st.success("✅ You've already completed onboarding!")
     st.write(f"You have **{status['persona_count']} persona(s)** set up.")
-    st.write("Visit the Dashboard to see your personas and start using Multitudes!")
     
-    if st.button("Retake Survey", help="Start fresh with new personas"):
-        st.session_state.retake_survey = True
-        st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🏠 Go to Dashboard", type="primary", use_container_width=True):
+            st.switch_page("streamlit_app.py")
+    with col2:
+        if st.button("🔄 Retake Survey", use_container_width=True, help="Start fresh with new personas"):
+            st.session_state.retake_survey = True
+            st.rerun()
 
 
 def render_phase_1(responses: Dict[str, Any], phase_config: Dict[str, Any]):
@@ -184,37 +193,49 @@ def render_phase_3(responses: Dict[str, Any], phase_config: Dict[str, Any]):
     
     questions = phase_config["questions"]
     
-    # Question 1: Task timing preferences
+    # Question 1: Peak energy task preferences
     q1 = questions[0]
     st.subheader(q1["text"])
     st.caption(q1.get("help_text", ""))
     task_timing = st.multiselect(
-        "Select preferences:",
+        "Select all that apply:",
         options=q1["options"],
         key="task_by_time",
         default=responses.get("task_by_time", [])
     )
     responses["task_by_time"] = task_timing
     
-    # Question 2: Time allocation
+    # Question 2: Low energy preferences  
     q2 = questions[1]
     st.subheader(q2["text"])
     st.caption(q2.get("help_text", ""))
+    low_energy = st.multiselect(
+        "Select all that apply:",
+        options=q2["options"],
+        key="low_energy_preferences",
+        default=responses.get("low_energy_preferences", [])
+    )
+    responses["low_energy_preferences"] = low_energy
+    
+    # Question 3: Time allocation
+    q3 = questions[2]
+    st.subheader(q3["text"])
+    st.caption(q3.get("help_text", ""))
     time_alloc = st.text_area(
         "Enter time allocations:",
         value=responses.get("weekly_time_allocation", ""),
-        placeholder=q2.get("placeholder", ""),
+        placeholder=q3.get("placeholder", ""),
         key="weekly_time_allocation",
         height=100
     )
     responses["weekly_time_allocation"] = time_alloc
     
-    # Question 3: Task switching
-    q3 = questions[2]
-    st.subheader(q3["text"])
+    # Question 4: Task switching
+    q4 = questions[3]
+    st.subheader(q4["text"])
     switching = st.radio(
         "Your preference:",
-        options=q3["options"],
+        options=q4["options"],
         key="task_switching"
     )
     responses["task_switching"] = switching
@@ -393,14 +414,22 @@ def main():
                         for persona in result.get("personas", []):
                             st.write(f"- {persona['emoji']} **{persona['name']}** ({persona['archetype']})")
                         
-                        # Clear session state
+                        # Clear session state and automatically redirect
                         st.session_state.retake_survey = False
                         st.session_state.current_phase = 0
                         st.session_state.survey_responses = {}
                         
-                        st.info("Head to the Dashboard to see your personas!")
-                        if st.button("Go to Dashboard"):
-                            st.switch_page("streamlit_app.py")
+                        st.markdown("---")
+                        st.success("🎯 **Setup Complete!** Your personas are ready.")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("🏠 Go to Dashboard", type="primary", use_container_width=True):
+                                st.switch_page("streamlit_app.py")
+                        with col2:
+                            if st.button("🔄 Retake Survey", use_container_width=True):
+                                st.session_state.retake_survey = True
+                                st.rerun()
 
 
 if __name__ == "__main__":

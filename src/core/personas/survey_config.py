@@ -94,16 +94,19 @@ PHASE_2_ENERGY = SurveyPhase(
     questions=[
         SurveyQuestion(
             id="overall_energy_pattern",
-            text="Generally speaking, when do you feel most energized?",
+            text="When do you typically feel most energized for focused work?",
             question_type="single_choice",
             options=[
-                "Early morning (5am-9am) - I'm up with the sun",
-                "Mid-morning (9am-12pm) - Post-coffee productivity",
-                "Early afternoon (12pm-3pm) - Lunch energizes me",
-                "Late afternoon (3pm-6pm) - I hit my stride",
-                "Evening (6pm-10pm) - Night owl energy",
-                "Late night (10pm-2am) - The world is quiet",
-                "It varies significantly day to day"
+                "Very early morning (5am-7am) - Dawn hours",
+                "Early morning (7am-9am) - Pre-business hours",
+                "Mid-morning (9am-12pm) - Standard productivity hours",
+                "Early afternoon (12pm-3pm) - Post-lunch energy",
+                "Late afternoon (3pm-6pm) - End-of-day surge",
+                "Early evening (6pm-8pm) - After-work hours",
+                "Late evening (8pm-11pm) - Night owl mode",
+                "Very late night (11pm-2am) - Deep night focus",
+                "It varies significantly by day/season",
+                "I have multiple peak periods per day"
             ],
             required=True
         ),
@@ -159,17 +162,35 @@ PHASE_3_TASKS = SurveyPhase(
     questions=[
         SurveyQuestion(
             id="task_by_time",
-            text="When do you prefer to do different types of work?",
+            text="What types of work do you find yourself most drawn to during your peak energy periods?",
             question_type="multiple_choice",
-            help_text="We'll use this to suggest the right tasks at the right times.",
+            help_text="Select all that apply. We'll help you align tasks with your natural energy rhythms.",
             options=[
-                "Deep analytical work in the morning",
-                "Creative projects in the afternoon/evening",
-                "Routine tasks during energy dips",
-                "Meetings and collaboration mid-day",
-                "Learning new things when fresh",
-                "Admin and email during low-energy times",
-                "Strategic planning when most alert"
+                "Deep analytical/logical work (coding, data analysis, problem-solving)",
+                "Creative/artistic projects (writing, design, music, ideation)",
+                "Strategic thinking and planning (architecture, system design, roadmaps)",
+                "Learning and skill development (courses, reading, research)",
+                "Communication and collaboration (meetings, presentations, mentoring)",
+                "Administrative tasks (email, scheduling, documentation)",
+                "Physical/hands-on work (building, repairs, crafts)",
+                "Reflective work (journaling, reviewing, organizing thoughts)",
+                "Social/relationship work (networking, team building, personal connections)"
+            ]
+        ),
+        SurveyQuestion(
+            id="low_energy_preferences", 
+            text="What do you prefer to do during your low-energy periods?",
+            question_type="multiple_choice",
+            help_text="These are good 'trough period' activities that don't require peak focus.",
+            options=[
+                "Light administrative tasks (filing, organizing, simple emails)",
+                "Routine maintenance (cleaning, updating systems, backups)",
+                "Consuming content (reading articles, watching tutorials)",
+                "Social activities (casual conversations, checking in with people)", 
+                "Physical tasks that don't require deep thinking",
+                "Rest and recovery (breaks, walks, meditation)",
+                "Creative play (doodling, light brainstorming, free writing)",
+                "I prefer to just rest during low-energy times"
             ]
         ),
         SurveyQuestion(
