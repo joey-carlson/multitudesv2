@@ -97,6 +97,15 @@ Work / Personal / Ignore (with sensible inference), persist locally, and use the
 tag to filter events and (later) apply work-hours vs. personal-hours context to
 matching and timing.
 
+### Deferred: finer-grained event hiding
+
+Per-event hide/unhide is implemented and persists locally (`hidden_events`).
+Keyed on the calendar event identifier, so **recurring events are hidden as a
+whole series** — accepted for now (2026-08-17). Revisit only if needed:
+- Per-occurrence hiding for recurring events.
+- Rule-based auto-hide (e.g. all-day events, events the user isn't organizing,
+  keywords like OOO/PTO/leave/holiday).
+
 ### Cross-cutting decisions (need resolution before building)
 
 - **A. Calendar integration is on-device (EventKit).** Read-only to start; adds
