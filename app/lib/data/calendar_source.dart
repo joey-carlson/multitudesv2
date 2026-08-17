@@ -4,7 +4,23 @@
 /// source-agnostic.
 library;
 
+import 'dart:io' show Platform;
+
+import 'package:flutter/services.dart';
+
 import '../domain/calendar_event.dart';
+
+/// Picks the best available calendar source for the current platform: the
+/// device calendar where a native binding exists (macOS today), otherwise the
+/// sample source so the feature is always usable.
+CalendarSource resolveCalendarSource() {
+  try {
+    if (Platform.isMacOS) return DeviceCalendarSource();
+  } catch (_) {
+    // Platform unavailable (e.g. tests/web) — fall through to sample.
+  }
+  return SampleCalendarSource();
+}
 
 abstract class CalendarSource {
   /// Human label shown in the UI (e.g. "Sample calendar", "Device calendar").
@@ -85,5 +101,52 @@ class SampleCalendarSource implements CalendarSource {
         .where((e) => e.end.isAfter(start) && e.start.isBefore(end))
         .toList()
       ..sort((a, b) => a.start.compareTo(b.start));
+  }
+}
+
+/// Reads the OS calendar via a native EventKit method channel (macOS).
+/// Fails safe: returns false/empty if the channel is missing or access denied.
+class DeviceCalendarSource implements CalendarSource {
+  static const _channel = MethodChannel('multitudes/calendar');
+
+  @override
+  String get label => 'Device calendar';
+
+  @override
+  bool get isLive => true;
+
+  @override
+  Future<bool> requestAccess() async {
+    try {
+      return await _channel.invokeMethod<bool>('requestAccess') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<List<CalendarEvent>> eventsInRange(DateTime start, DateTime end) async {
+    try {
+      final raw = await _channel.invokeMethod<List<dynamic>>('eventsInRange', {
+        'startMs': start.millisecondsSinceEpoch,
+        'endMs': end.millisecondsSinceEpoch,
+      });
+      return (raw ?? const []).map((item) {
+        final m = (item as Map).cast<String, dynamic>();
+        return CalendarEvent(
+          id: m['id'] as String,
+          title: (m['title'] as String?)?.isNotEmpty == true
+              ? m['title'] as String
+              : '(untitled)',
+          notes: m['notes'] as String?,
+          start: DateTime.fromMillisecondsSinceEpoch(m['startMs'] as int),
+          end: DateTime.fromMillisecondsSinceEpoch(m['endMs'] as int),
+          allDay: (m['allDay'] as bool?) ?? false,
+          calendarName: m['calendar'] as String?,
+        );
+      }).toList();
+    } catch (_) {
+      return const [];
+    }
   }
 }

@@ -36,7 +36,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => CalendarScreen(
-                  source: SampleCalendarSource(),
+                  source: resolveCalendarSource(),
                   personas: personas,
                 ),
               ),
