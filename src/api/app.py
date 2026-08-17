@@ -2,7 +2,7 @@
 FastAPI Application for Multitudes.
 
 Main API server with authentication and context management endpoints.
-Runs on port 2701.
+Runs on port 8001 (see scripts/run-api.sh).
 """
 
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -41,10 +41,10 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS middleware for Streamlit dashboard
+# CORS middleware for Streamlit dashboard (runs on 8502; see scripts/run-dashboard.sh)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:2700", "http://127.0.0.1:2700"],
+    allow_origins=["http://localhost:8502", "http://127.0.0.1:8502"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -310,4 +310,4 @@ async def http_exception_handler(request, exc):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=2701)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

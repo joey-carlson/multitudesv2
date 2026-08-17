@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Onboarding energy-pattern mapping: `PersonaGenerator._extract_energy_config`
+  matched stale option strings (e.g. "5am-9am", "6pm-10pm") that no longer
+  existed in the survey, so 5 of 10 peak-energy answers silently fell back to
+  the archetype default instead of the user's choice. Now matches all 10
+  current `overall_energy_pattern` options via a data-driven time-range lookup.
+
 ### Added
+- First-time onboarding survey (persona discovery wizard):
+  - 5-phase survey configuration (`survey_config.py`)
+  - Survey-to-persona generator with energy patterns, custom names, and
+    weekly-hour allocation (`persona_generator.py`)
+  - Onboarding API endpoints: `GET /survey`, `GET /status`, `POST /submit`,
+    `GET /personas` (`api/endpoints/onboarding.py`)
+  - Streamlit onboarding wizard page with progress and resume
+  - Persona/energy-reading schema and Alembic migration
+  - Parametrized regression tests guarding survey↔generator option alignment
 - Comprehensive user personalization architecture documentation
   - Phase 1: Adaptive Prompt Templates (current focus)
   - Phase 2: RAG + Vector Embeddings (future)
@@ -23,7 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker guide for beginners
 
 ### Planned
-- Persona discovery wizard
 - Apple Mail integration
 - Apple Calendar integration
 - Basic task management
