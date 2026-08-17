@@ -17,7 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ideal tasks).
 - **Energy check-ins** — `energy_readings` table (Drift schema v2 + migration);
   log a persona's current energy (1–10) and view recent check-ins, stored
-  locally. Verified: `flutter analyze` clean, 22 Flutter tests passing.
+  locally.
+- **Task management** — `tasks` table (Drift schema v3 + migration); add tasks
+  to a persona (energy required, estimated effort) and complete them, on the
+  persona detail screen.
+- **Balance dashboard** — ideal vs. actual weekly hours per persona with
+  Neglected/On-track/Overworked indicators; actual hours are derived from tasks
+  completed in the last 7 days (`Persona.balanceScore` ported from Python).
+  Verified: `flutter analyze` clean, 28 Flutter tests passing.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
   `tests/fixtures/persona_generation_cases.json` from the Python generator (the
   executable spec); both the Python and Dart suites assert against the same
