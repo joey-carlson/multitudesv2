@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../data/calendar_source.dart';
 import '../data/database.dart';
 import '../domain/persona.dart';
 import 'balance_screen.dart';
+import 'calendar_screen.dart';
 import 'persona_detail_screen.dart';
 
 /// Home: shows the user's personas, highlights who's at peak/trough right now,
@@ -28,6 +30,18 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Multitudes'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today),
+            tooltip: 'Calendar',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CalendarScreen(
+                  source: SampleCalendarSource(),
+                  personas: personas,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.balance),
             tooltip: 'Balance',
