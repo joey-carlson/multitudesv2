@@ -2516,6 +2516,170 @@ class CalendarPrefsCompanion extends UpdateCompanion<CalendarPrefRow> {
   }
 }
 
+class $HiddenEventsTable extends HiddenEvents
+    with TableInfo<$HiddenEventsTable, HiddenEventRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HiddenEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [eventId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hidden_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HiddenEventRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  HiddenEventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HiddenEventRow(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+    );
+  }
+
+  @override
+  $HiddenEventsTable createAlias(String alias) {
+    return $HiddenEventsTable(attachedDatabase, alias);
+  }
+}
+
+class HiddenEventRow extends DataClass implements Insertable<HiddenEventRow> {
+  final String eventId;
+  const HiddenEventRow({required this.eventId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['event_id'] = Variable<String>(eventId);
+    return map;
+  }
+
+  HiddenEventsCompanion toCompanion(bool nullToAbsent) {
+    return HiddenEventsCompanion(eventId: Value(eventId));
+  }
+
+  factory HiddenEventRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HiddenEventRow(
+      eventId: serializer.fromJson<String>(json['eventId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'eventId': serializer.toJson<String>(eventId)};
+  }
+
+  HiddenEventRow copyWith({String? eventId}) =>
+      HiddenEventRow(eventId: eventId ?? this.eventId);
+  HiddenEventRow copyWithCompanion(HiddenEventsCompanion data) {
+    return HiddenEventRow(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HiddenEventRow(')
+          ..write('eventId: $eventId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => eventId.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HiddenEventRow && other.eventId == this.eventId);
+}
+
+class HiddenEventsCompanion extends UpdateCompanion<HiddenEventRow> {
+  final Value<String> eventId;
+  final Value<int> rowid;
+  const HiddenEventsCompanion({
+    this.eventId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HiddenEventsCompanion.insert({
+    required String eventId,
+    this.rowid = const Value.absent(),
+  }) : eventId = Value(eventId);
+  static Insertable<HiddenEventRow> custom({
+    Expression<String>? eventId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HiddenEventsCompanion copyWith({Value<String>? eventId, Value<int>? rowid}) {
+    return HiddenEventsCompanion(
+      eventId: eventId ?? this.eventId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HiddenEventsCompanion(')
+          ..write('eventId: $eventId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2523,6 +2687,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $EnergyReadingsTable energyReadings = $EnergyReadingsTable(this);
   late final $TasksTable tasks = $TasksTable(this);
   late final $CalendarPrefsTable calendarPrefs = $CalendarPrefsTable(this);
+  late final $HiddenEventsTable hiddenEvents = $HiddenEventsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2532,6 +2697,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     energyReadings,
     tasks,
     calendarPrefs,
+    hiddenEvents,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4203,6 +4369,116 @@ typedef $$CalendarPrefsTableProcessedTableManager =
       CalendarPrefRow,
       PrefetchHooks Function()
     >;
+typedef $$HiddenEventsTableCreateCompanionBuilder =
+    HiddenEventsCompanion Function({required String eventId, Value<int> rowid});
+typedef $$HiddenEventsTableUpdateCompanionBuilder =
+    HiddenEventsCompanion Function({Value<String> eventId, Value<int> rowid});
+
+class $$HiddenEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $HiddenEventsTable> {
+  $$HiddenEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HiddenEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HiddenEventsTable> {
+  $$HiddenEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HiddenEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HiddenEventsTable> {
+  $$HiddenEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+}
+
+class $$HiddenEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HiddenEventsTable,
+          HiddenEventRow,
+          $$HiddenEventsTableFilterComposer,
+          $$HiddenEventsTableOrderingComposer,
+          $$HiddenEventsTableAnnotationComposer,
+          $$HiddenEventsTableCreateCompanionBuilder,
+          $$HiddenEventsTableUpdateCompanionBuilder,
+          (
+            HiddenEventRow,
+            BaseReferences<_$AppDatabase, $HiddenEventsTable, HiddenEventRow>,
+          ),
+          HiddenEventRow,
+          PrefetchHooks Function()
+        > {
+  $$HiddenEventsTableTableManager(_$AppDatabase db, $HiddenEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HiddenEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HiddenEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HiddenEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> eventId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => HiddenEventsCompanion(eventId: eventId, rowid: rowid),
+          createCompanionCallback: ({
+            required String eventId,
+            Value<int> rowid = const Value.absent(),
+          }) => HiddenEventsCompanion.insert(eventId: eventId, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HiddenEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HiddenEventsTable,
+      HiddenEventRow,
+      $$HiddenEventsTableFilterComposer,
+      $$HiddenEventsTableOrderingComposer,
+      $$HiddenEventsTableAnnotationComposer,
+      $$HiddenEventsTableCreateCompanionBuilder,
+      $$HiddenEventsTableUpdateCompanionBuilder,
+      (
+        HiddenEventRow,
+        BaseReferences<_$AppDatabase, $HiddenEventsTable, HiddenEventRow>,
+      ),
+      HiddenEventRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4215,4 +4491,6 @@ class $AppDatabaseManager {
       $$TasksTableTableManager(_db, _db.tasks);
   $$CalendarPrefsTableTableManager get calendarPrefs =>
       $$CalendarPrefsTableTableManager(_db, _db.calendarPrefs);
+  $$HiddenEventsTableTableManager get hiddenEvents =>
+      $$HiddenEventsTableTableManager(_db, _db.hiddenEvents);
 }

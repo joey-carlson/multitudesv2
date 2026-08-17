@@ -110,13 +110,22 @@ class CalendarPrefs extends Table {
   Set<Column> get primaryKey => {calendarId};
 }
 
-@DriftDatabase(tables: [Personas, EnergyReadings, Tasks, CalendarPrefs])
+/// Individual calendar events the user has excluded from Multitudes.
+@DataClassName('HiddenEventRow')
+class HiddenEvents extends Table {
+  TextColumn get eventId => text()();
+
+  @override
+  Set<Column> get primaryKey => {eventId};
+}
+
+@DriftDatabase(tables: [Personas, EnergyReadings, Tasks, CalendarPrefs, HiddenEvents])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,8 +135,25 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) await m.createTable(energyReadings);
           if (from < 3) await m.createTable(tasks);
           if (from < 4) await m.createTable(calendarPrefs);
+          if (from < 5) await m.createTable(hiddenEvents);
         },
       );
+
+  /// Ids of events the user has hidden from consideration.
+  Future<Set<String>> hiddenEventIds() async {
+    final rows = await select(hiddenEvents).get();
+    return rows.map((r) => r.eventId).toSet();
+  }
+
+  /// Hide or unhide a single event.
+  Future<void> setEventHidden(String eventId, bool hidden) async {
+    if (hidden) {
+      await into(hiddenEvents)
+          .insertOnConflictUpdate(HiddenEventsCompanion.insert(eventId: eventId));
+    } else {
+      await (delete(hiddenEvents)..where((t) => t.eventId.equals(eventId))).go();
+    }
+  }
 
   /// User overrides of calendar classification, by calendar id.
   Future<Map<String, CalendarKind>> calendarKinds() async {

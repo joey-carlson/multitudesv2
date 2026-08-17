@@ -29,6 +29,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late Future<_CalendarData> _future;
   CalendarKind? _filter; // null = all (work + personal + unset)
+  bool _showHidden = false;
 
   @override
   void initState() {
@@ -38,18 +39,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<_CalendarData> _load() async {
     final granted = await widget.source.requestAccess();
-    if (!granted) return _CalendarData(granted: false, events: const [], kinds: const {});
+    if (!granted) {
+      return _CalendarData(
+          granted: false, events: const [], kinds: const {}, hidden: const {});
+    }
 
     final calendars = await widget.source.listCalendars();
     final overrides = await widget.db.calendarKinds();
     final kinds = {
       for (final c in calendars) c.id: effectiveKind(c, overrides)
     };
+    final hidden = await widget.db.hiddenEventIds();
 
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
-    return _CalendarData(granted: true, events: events, kinds: kinds);
+    return _CalendarData(
+        granted: true, events: events, kinds: kinds, hidden: hidden);
+  }
+
+  Future<void> _setHidden(CalendarEvent e, bool hidden) async {
+    await widget.db.setEventHidden(e.id, hidden);
+    if (mounted) setState(() => _future = _load());
   }
 
   Future<void> _openSettings() async {
@@ -65,6 +76,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: const Text('Calendar'),
         actions: [
+          IconButton(
+            icon: Icon(_showHidden ? Icons.visibility : Icons.visibility_off),
+            tooltip: _showHidden ? 'Hide hidden events' : 'Show hidden events',
+            onPressed: () => setState(() => _showHidden = !_showHidden),
+          ),
           IconButton(
             icon: const Icon(Icons.tune),
             tooltip: 'Classify calendars',
@@ -88,10 +104,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ? CalendarKind.unset
               : (data.kinds[e.calendarId] ?? CalendarKind.unset);
 
-          // Hide ignored calendars, then apply the work/personal filter.
+          // Hide ignored calendars, apply the work/personal filter, and drop
+          // hidden events unless the user is reviewing them.
           final visible = data.events.where((e) {
             final k = kindOf(e);
             if (k == CalendarKind.ignore) return false;
+            if (!_showHidden && data.hidden.contains(e.id)) return false;
             if (_filter == null) return true;
             return k == _filter;
           }).toList();
@@ -122,6 +140,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             _EventCard(
                               event: e,
                               kind: kindOf(e),
+                              hidden: data.hidden.contains(e.id),
+                              onToggleHidden: (h) => _setHidden(e, h),
                               matches:
                                   rankPersonasForEvent(e, widget.personas),
                             ),
@@ -137,10 +157,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
 }
 
 class _CalendarData {
-  _CalendarData({required this.granted, required this.events, required this.kinds});
+  _CalendarData({
+    required this.granted,
+    required this.events,
+    required this.kinds,
+    required this.hidden,
+  });
   final bool granted;
   final List<CalendarEvent> events;
   final Map<String, CalendarKind> kinds;
+  final Set<String> hidden;
 }
 
 class _FilterBar extends StatelessWidget {
@@ -173,18 +199,26 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event, required this.kind, required this.matches});
+  const _EventCard({
+    required this.event,
+    required this.kind,
+    required this.hidden,
+    required this.onToggleHidden,
+    required this.matches,
+  });
 
   final CalendarEvent event;
   final CalendarKind kind;
+  final bool hidden;
+  final ValueChanged<bool> onToggleHidden;
   final List<PersonaMatch> matches;
 
   @override
   Widget build(BuildContext context) {
     final top = matches.isNotEmpty ? matches.first : null;
-    return Card(
+    final card = Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 4, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -197,20 +231,46 @@ class _EventCard extends StatelessWidget {
                 ),
                 if (kind == CalendarKind.work || kind == CalendarKind.personal)
                   _KindChip(kind: kind),
+                PopupMenuButton<bool>(
+                  tooltip: 'Event options',
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: onToggleHidden,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: !hidden,
+                      child: Text(hidden
+                          ? 'Unhide — consider in Multitudes'
+                          : 'Hide from Multitudes'),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 2),
-            Text(_when(event), style: TextStyle(color: Colors.grey[600])),
-            const SizedBox(height: 8),
-            if (top == null)
-              const Text('No persona matched',
-                  style: TextStyle(color: Colors.grey))
-            else
-              _MatchLine(match: top),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_when(event), style: TextStyle(color: Colors.grey[600])),
+                  const SizedBox(height: 8),
+                  if (hidden)
+                    const Text('Hidden — not considered',
+                        style: TextStyle(
+                            color: Colors.grey, fontStyle: FontStyle.italic))
+                  else if (top == null)
+                    const Text('No persona matched',
+                        style: TextStyle(color: Colors.grey))
+                  else
+                    _MatchLine(match: top),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+    // Dim hidden events when they're being reviewed.
+    return hidden ? Opacity(opacity: 0.55, child: card) : card;
   }
 
   static String _when(CalendarEvent e) {

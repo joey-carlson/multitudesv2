@@ -144,4 +144,15 @@ void main() {
     kinds = await db.calendarKinds();
     expect(kinds['cal-1'], CalendarKind.ignore);
   });
+
+  test('hidden events: hide, read back, and unhide', () async {
+    expect(await db.hiddenEventIds(), isEmpty);
+
+    await db.setEventHidden('evt-1', true);
+    await db.setEventHidden('evt-2', true);
+    expect(await db.hiddenEventIds(), {'evt-1', 'evt-2'});
+
+    await db.setEventHidden('evt-1', false);
+    expect(await db.hiddenEventIds(), {'evt-2'});
+  });
 }
