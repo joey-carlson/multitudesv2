@@ -20,8 +20,8 @@ void main() {
     });
 
     // Act
-    await tester.pumpWidget(
-        MaterialApp(home: HomeScreen(personas: personas, db: db)));
+    await tester.pumpWidget(MaterialApp(
+        home: HomeScreen(personas: personas, db: db, userId: 'u1')));
 
     // Assert
     expect(find.text('Executive Emma'), findsOneWidget);

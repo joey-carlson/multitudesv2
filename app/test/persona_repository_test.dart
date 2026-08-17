@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:multitudes/data/database.dart';
 import 'package:multitudes/domain/energy_reading.dart';
 import 'package:multitudes/domain/persona_generator.dart';
+import 'package:multitudes/domain/task.dart';
 
 void main() {
   late AppDatabase db;
@@ -70,5 +71,61 @@ void main() {
     // Assert: newest first
     expect(readings.map((r) => r.energyLevel).toList(), [8, 4]);
     expect(readings.first.personaId, personaId);
+  });
+
+  test('tasks: add, list incomplete-first, and complete', () async {
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🧠 The Professional'],
+    }));
+    final pid = (await db.activePersonas('u1')).single.id!;
+
+    await db.addTask(Task(userId: 'u1', personaId: pid, title: 'A'));
+    await db.addTask(Task(userId: 'u1', personaId: pid, title: 'B'));
+    var tasks = await db.tasksForPersona(pid);
+    expect(tasks.length, 2);
+
+    await db.setTaskCompleted(tasks.first.id!, true);
+    tasks = await db.tasksForPersona(pid);
+    expect(tasks.first.completed, isFalse); // incomplete sorts first
+    expect(tasks.where((t) => t.completed).length, 1);
+  });
+
+  test('actualWeeklyHours sums completed durations within the window',
+      () async {
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🧠 The Professional'],
+    }));
+    final pid = (await db.activePersonas('u1')).single.id!;
+    final since = DateTime(2026, 1, 1);
+
+    // Completed within window: 60 + 30 min = 1.5h
+    await db.addTask(Task(
+        userId: 'u1',
+        personaId: pid,
+        title: 'r1',
+        estimatedMinutes: 60,
+        completed: true,
+        completedAt: DateTime(2026, 1, 5)));
+    await db.addTask(Task(
+        userId: 'u1',
+        personaId: pid,
+        title: 'r2',
+        estimatedMinutes: 30,
+        completed: true,
+        completedAt: DateTime(2026, 1, 6)));
+    // Completed before window -> excluded
+    await db.addTask(Task(
+        userId: 'u1',
+        personaId: pid,
+        title: 'old',
+        estimatedMinutes: 120,
+        completed: true,
+        completedAt: DateTime(2025, 12, 1)));
+    // Incomplete -> excluded
+    await db.addTask(
+        Task(userId: 'u1', personaId: pid, title: 'todo', estimatedMinutes: 120));
+
+    final hours = await db.actualWeeklyHours('u1', since: since);
+    expect(hours[pid], closeTo(1.5, 1e-9));
   });
 }

@@ -12,6 +12,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
+import '../domain/task.dart';
 
 part 'database.g.dart';
 
@@ -79,20 +80,41 @@ class EnergyReadings extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Personas, EnergyReadings])
+/// Tasks — a focused mirror of src/shared/database/models.py `Task`.
+@DataClassName('TaskRow')
+class Tasks extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get personaId =>
+      text().references(Personas, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text()();
+  IntColumn get energyRequired => integer().withDefault(const Constant(3))();
+  IntColumn get priority => integer().withDefault(const Constant(3))();
+  IntColumn get estimatedMinutes => integer().withDefault(const Constant(30))();
+  BoolColumn get completed => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Personas, EnergyReadings, Tasks])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
-          // v2 added energy_readings; create it for databases created at v1.
+          // v2 added energy_readings; v3 added tasks. Create whichever the
+          // existing database predates.
           if (from < 2) await m.createTable(energyReadings);
+          if (from < 3) await m.createTable(tasks);
         },
       );
 
@@ -145,6 +167,76 @@ class AppDatabase extends _$AppDatabase {
         )
     ];
   }
+
+  /// Add a task.
+  Future<void> addTask(Task task) async {
+    await into(tasks).insert(TasksCompanion.insert(
+      id: _newId(),
+      userId: task.userId,
+      personaId: task.personaId,
+      title: task.title,
+      energyRequired: Value(task.energyRequired),
+      priority: Value(task.priority),
+      estimatedMinutes: Value(task.estimatedMinutes),
+      completed: Value(task.completed),
+      completedAt: Value(task.completedAt),
+      createdAt: Value(task.createdAt),
+    ));
+  }
+
+  /// Tasks for a persona: incomplete first, then most-recently created.
+  Future<List<Task>> tasksForPersona(String personaId) async {
+    final rows = await (select(tasks)
+          ..where((t) => t.personaId.equals(personaId))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.completed),
+            (t) => OrderingTerm.desc(t.createdAt),
+          ]))
+        .get();
+    return rows.map(_taskFromRow).toList();
+  }
+
+  /// Mark a task complete/incomplete, stamping completedAt.
+  Future<void> setTaskCompleted(String taskId, bool completed) async {
+    await (update(tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(
+        completed: Value(completed),
+        completedAt: Value(completed ? DateTime.now() : null),
+      ),
+    );
+  }
+
+  /// Actual weekly hours per persona = sum of estimated minutes of tasks
+  /// completed on/after [since] (default: 7 days ago), grouped by persona.
+  Future<Map<String, double>> actualWeeklyHours(String userId,
+      {DateTime? since}) async {
+    final cutoff = since ?? DateTime.now().subtract(const Duration(days: 7));
+    final rows = await (select(tasks)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              t.completed.equals(true) &
+              t.completedAt.isBiggerOrEqualValue(cutoff)))
+        .get();
+    final byPersona = <String, double>{};
+    for (final r in rows) {
+      byPersona[r.personaId] =
+          (byPersona[r.personaId] ?? 0) + r.estimatedMinutes / 60.0;
+    }
+    return byPersona;
+  }
+
+  Task _taskFromRow(TaskRow r) => Task(
+        id: r.id,
+        userId: r.userId,
+        personaId: r.personaId,
+        title: r.title,
+        energyRequired: r.energyRequired,
+        priority: r.priority,
+        estimatedMinutes: r.estimatedMinutes,
+        completed: r.completed,
+        completedAt: r.completedAt,
+        createdAt: r.createdAt,
+      );
 
   PersonasCompanion _toCompanion(Persona p) => PersonasCompanion.insert(
         id: p.id ?? _newId(),

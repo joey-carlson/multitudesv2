@@ -128,6 +128,16 @@ class Persona {
   /// Whether [now] falls in this persona's peak window.
   bool isAtPeak(DateTime now) => energyStateAt(now) == EnergyState.peak;
 
+  /// Balance score (0.0–1.0) for [actualHours] vs. the ideal weekly hours —
+  /// a port of the Python `calculate_balance_score`. 1.0 = on target,
+  /// 0.5 = no target set, lower = under- or over-served.
+  double balanceScore(double actualHours) {
+    if (idealWeeklyHours == 0) return 0.5;
+    final ratio = actualHours / idealWeeklyHours;
+    if (ratio <= 1.0) return ratio;
+    return (2.0 - ratio).clamp(0.0, 1.0);
+  }
+
   /// True if [minutes] (since midnight) is within [start]–[end] ("HH:MM"),
   /// handling windows that cross midnight (e.g. 23:00–02:00).
   static bool _inWindow(String? start, String? end, int minutes) {

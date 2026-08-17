@@ -3,14 +3,21 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
+import '../domain/task.dart';
 
 /// Full detail for one persona: energy windows, current state, the rich
-/// attributes the generator produced, plus energy check-ins (log + history).
+/// attributes the generator produced, energy check-ins, and tasks.
 class PersonaDetailScreen extends StatefulWidget {
-  const PersonaDetailScreen({super.key, required this.persona, required this.db});
+  const PersonaDetailScreen({
+    super.key,
+    required this.persona,
+    required this.db,
+    required this.userId,
+  });
 
   final Persona persona;
   final AppDatabase db;
+  final String userId;
 
   @override
   State<PersonaDetailScreen> createState() => _PersonaDetailScreenState();
@@ -20,11 +27,13 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
   Persona get _persona => widget.persona;
   double _level = 5;
   late Future<List<EnergyReading>> _readings;
+  late Future<List<Task>> _tasks;
 
   @override
   void initState() {
     super.initState();
     _loadReadings();
+    _loadTasks();
   }
 
   void _loadReadings() {
@@ -32,6 +41,86 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
     _readings = id == null
         ? Future.value(const [])
         : widget.db.recentReadings(id);
+  }
+
+  void _loadTasks() {
+    final id = _persona.id;
+    _tasks =
+        id == null ? Future.value(const []) : widget.db.tasksForPersona(id);
+  }
+
+  Future<void> _toggleTask(Task task, bool completed) async {
+    if (task.id == null) return;
+    await widget.db.setTaskCompleted(task.id!, completed);
+    if (mounted) setState(_loadTasks);
+  }
+
+  Future<void> _addTaskDialog() async {
+    final id = _persona.id;
+    if (id == null) return;
+    final titleController = TextEditingController();
+    var energy = 3.0;
+    var minutes = 30.0;
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: Text('New task for ${_persona.name}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                    labelText: 'Task', hintText: 'e.g. Review Q3 report'),
+              ),
+              const SizedBox(height: 12),
+              Text('Energy required: ${energy.round()}/5'),
+              Slider(
+                value: energy,
+                min: 1,
+                max: 5,
+                divisions: 4,
+                label: '${energy.round()}',
+                onChanged: (v) => setLocal(() => energy = v),
+              ),
+              Text('Estimated: ${minutes.round()} min'),
+              Slider(
+                value: minutes,
+                min: 15,
+                max: 180,
+                divisions: 11,
+                label: '${minutes.round()} min',
+                onChanged: (v) => setLocal(() => minutes = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (created == true && titleController.text.trim().isNotEmpty) {
+      await widget.db.addTask(Task(
+        userId: widget.userId,
+        personaId: id,
+        title: titleController.text.trim(),
+        energyRequired: energy.round(),
+        estimatedMinutes: minutes.round(),
+      ));
+      if (mounted) setState(_loadTasks);
+    }
   }
 
   Future<void> _logEnergy() async {
@@ -78,6 +167,8 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
           const SizedBox(height: 12),
           _EnergyStateChip(state: state),
           const SizedBox(height: 20),
+          _tasksCard(),
+          const SizedBox(height: 20),
           _checkInCard(),
           const SizedBox(height: 20),
           _EnergyWindows(persona: _persona),
@@ -94,6 +185,66 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
       ),
     );
   }
+
+  Widget _tasksCard() => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text('Tasks',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                  TextButton.icon(
+                    onPressed: _persona.id == null ? null : _addTaskDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+              FutureBuilder<List<Task>>(
+                future: _tasks,
+                builder: (context, snap) {
+                  final tasks = snap.data ?? const [];
+                  if (tasks.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No tasks yet. Add one above.',
+                          style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final t in tasks)
+                        CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: t.completed,
+                          onChanged: (v) => _toggleTask(t, v ?? false),
+                          title: Text(
+                            t.title,
+                            style: t.completed
+                                ? const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey)
+                                : null,
+                          ),
+                          subtitle: Text(
+                              '⚡${t.energyRequired}/5 · ${t.estimatedMinutes} min'),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
 
   Widget _checkInCard() => Card(
         child: Padding(

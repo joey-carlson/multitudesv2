@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../domain/persona.dart';
+import 'balance_screen.dart';
 import 'persona_detail_screen.dart';
 
 /// Home: shows the user's personas, highlights who's at peak/trough right now,
@@ -11,11 +12,13 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.personas,
     required this.db,
+    required this.userId,
     this.onRetake,
   });
 
   final List<Persona> personas;
   final AppDatabase db;
+  final String userId;
   final VoidCallback? onRetake;
 
   @override
@@ -25,6 +28,19 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Multitudes'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.balance),
+            tooltip: 'Balance',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => BalanceScreen(
+                  personas: personas,
+                  db: db,
+                  userId: userId,
+                ),
+              ),
+            ),
+          ),
           if (onRetake != null)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -38,18 +54,24 @@ class HomeScreen extends StatelessWidget {
         itemCount: personas.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, i) =>
-            _PersonaCard(persona: personas[i], now: now, db: db),
+            _PersonaCard(persona: personas[i], now: now, db: db, userId: userId),
       ),
     );
   }
 }
 
 class _PersonaCard extends StatelessWidget {
-  const _PersonaCard({required this.persona, required this.now, required this.db});
+  const _PersonaCard({
+    required this.persona,
+    required this.now,
+    required this.db,
+    required this.userId,
+  });
 
   final Persona persona;
   final DateTime now;
   final AppDatabase db;
+  final String userId;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +84,8 @@ class _PersonaCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => PersonaDetailScreen(persona: persona, db: db),
+            builder: (_) =>
+              PersonaDetailScreen(persona: persona, db: db, userId: userId),
           ),
         ),
         child: Padding(
