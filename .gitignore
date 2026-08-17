@@ -27,6 +27,16 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# =============================================================================
+# Flutter app (app/)
+# The broad Python `lib/` rule above otherwise ignores all of app/lib/ source.
+# Re-include the Flutter source tree; build artifacts stay ignored via
+# app/.gitignore (.dart_tool/, build/, etc.). Generated *.g.dart is committed
+# so the app builds without a codegen step.
+# =============================================================================
+!app/lib/
+!app/lib/**
+
 # Virtual Environments
 .venv/
 venv/
