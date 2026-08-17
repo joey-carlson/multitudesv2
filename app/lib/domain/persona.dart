@@ -39,6 +39,18 @@ enum EnergyState {
   final int level;
 }
 
+/// How well a persona is being "fed" — its share of attention vs. its target.
+enum FedState {
+  starving('Starving'),
+  fed('Fed'),
+  overFed('Over-fed'),
+  noTarget('No target');
+
+  const FedState(this.label);
+
+  final String label;
+}
+
 /// Template for a common archetype, mirroring PersonaArchetypeTemplate.
 /// Energy times are stored as "HH:MM" strings (matching the DB representation).
 class PersonaArchetypeTemplate {
@@ -136,6 +148,16 @@ class Persona {
     final ratio = actualHours / idealWeeklyHours;
     if (ratio <= 1.0) return ratio;
     return (2.0 - ratio).clamp(0.0, 1.0);
+  }
+
+  /// Classify how well-fed this persona is for [actualHours] vs. its target.
+  /// Starving < 50% of target; Fed within [50%, 115%]; Over-fed above that.
+  FedState fedState(double actualHours) {
+    if (idealWeeklyHours <= 0) return FedState.noTarget;
+    final ratio = actualHours / idealWeeklyHours;
+    if (ratio < 0.5) return FedState.starving;
+    if (ratio <= 1.15) return FedState.fed;
+    return FedState.overFed;
   }
 
   /// True if [minutes] (since midnight) is within [start]–[end] ("HH:MM"),

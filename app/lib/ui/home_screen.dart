@@ -49,12 +49,60 @@ class HomeScreen extends StatelessWidget {
             ),
         ],
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: personas.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, i) =>
-            _PersonaCard(persona: personas[i], now: now, db: db, userId: userId),
+      body: FutureBuilder<Map<String, double>>(
+        future: db.actualWeeklyHours(userId),
+        builder: (context, snap) {
+          final actual = snap.data ?? const {};
+          final starving = personas
+              .where((p) =>
+                  p.fedState(actual[p.id] ?? 0) == FedState.starving)
+              .length;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (starving > 0) ...[
+                _StarvingBanner(
+                  count: starving,
+                  onTap: () => _openBalance(context),
+                ),
+                const SizedBox(height: 12),
+              ],
+              for (final p in personas) ...[
+                _PersonaCard(persona: p, now: now, db: db, userId: userId),
+                const SizedBox(height: 12),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _openBalance(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              BalanceScreen(personas: personas, db: db, userId: userId),
+        ),
+      );
+}
+
+/// Home banner surfacing starving personas, tappable into the dashboard.
+class _StarvingBanner extends StatelessWidget {
+  const _StarvingBanner({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.red.withValues(alpha: 0.08),
+      child: ListTile(
+        leading: const Text('🍽️', style: TextStyle(fontSize: 24)),
+        title: Text('$count persona${count == 1 ? '' : 's'} starving'),
+        subtitle: const Text('Tap to see who needs feeding'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

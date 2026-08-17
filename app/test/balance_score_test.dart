@@ -33,4 +33,25 @@ void main() {
       expect(_persona(ideal: 0).balanceScore(5), 0.5);
     });
   });
+
+  group('Persona.fedState', () {
+    test('below 50% of target is starving', () {
+      expect(_persona(ideal: 40).fedState(10), FedState.starving); // 25%
+      expect(_persona(ideal: 40).fedState(19), FedState.starving); // 47.5%
+    });
+
+    test('within 50%-115% is fed', () {
+      expect(_persona(ideal: 40).fedState(20), FedState.fed); // 50%
+      expect(_persona(ideal: 40).fedState(40), FedState.fed); // 100%
+      expect(_persona(ideal: 40).fedState(46), FedState.fed); // 115%
+    });
+
+    test('above 115% is over-fed', () {
+      expect(_persona(ideal: 40).fedState(50), FedState.overFed); // 125%
+    });
+
+    test('no weekly target -> noTarget', () {
+      expect(_persona(ideal: 0).fedState(5), FedState.noTarget);
+    });
+  });
 }

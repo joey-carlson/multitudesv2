@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../domain/persona.dart';
 
-/// Balance dashboard: ideal vs. actual weekly hours per persona, so you can see
-/// which personas are neglected or overworked. "Actual" hours come from tasks
-/// completed in the last 7 days (their estimated durations).
+/// Persona feeding dashboard: which personas are fed, over-fed, or starving.
+/// "Actual" hours currently come from tasks completed in the last 7 days;
+/// calendar time will feed in once calendar integration (F1) lands.
 class BalanceScreen extends StatelessWidget {
   const BalanceScreen({
     super.key,
@@ -21,7 +21,7 @@ class BalanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Persona balance')),
+      appBar: AppBar(title: const Text('Are your personas fed?')),
       body: FutureBuilder<Map<String, double>>(
         future: db.actualWeeklyHours(userId),
         builder: (context, snap) {
@@ -29,22 +29,92 @@ class BalanceScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final actualByPersona = snap.data ?? const {};
+
+          // Build + sort attention-first: starving, then over-fed, fed, none.
+          final rows = [
+            for (final p in personas)
+              (persona: p, actual: actualByPersona[p.id] ?? 0.0)
+          ]..sort((a, b) => _priority(a.persona.fedState(a.actual))
+              .compareTo(_priority(b.persona.fedState(b.actual))));
+
+          final counts = <FedState, int>{};
+          for (final r in rows) {
+            final s = r.persona.fedState(r.actual);
+            counts[s] = (counts[s] ?? 0) + 1;
+          }
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              _SummaryCard(counts: counts),
+              const SizedBox(height: 8),
               Text(
-                'Based on tasks completed in the last 7 days.',
-                style: TextStyle(color: Colors.grey[600]),
+                'Based on tasks completed in the last 7 days. '
+                'Calendar time will count too once calendar sync is added.',
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
-              const SizedBox(height: 12),
-              for (final p in personas)
-                _BalanceRow(
-                  persona: p,
-                  actual: actualByPersona[p.id] ?? 0,
-                ),
+              const SizedBox(height: 8),
+              for (final r in rows)
+                _BalanceRow(persona: r.persona, actual: r.actual),
             ],
           );
         },
+      ),
+    );
+  }
+
+  static int _priority(FedState s) => switch (s) {
+        FedState.starving => 0,
+        FedState.overFed => 1,
+        FedState.fed => 2,
+        FedState.noTarget => 3,
+      };
+}
+
+Color _colorFor(FedState s) => switch (s) {
+      FedState.starving => Colors.red,
+      FedState.overFed => Colors.orange,
+      FedState.fed => Colors.green,
+      FedState.noTarget => Colors.grey,
+    };
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.counts});
+
+  final Map<FedState, int> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    final starving = counts[FedState.starving] ?? 0;
+    final headline = starving > 0
+        ? '🍽️ $starving persona${starving == 1 ? '' : 's'} starving'
+        : '🎉 Your personas are in balance';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(headline,
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final s in FedState.values)
+                  if ((counts[s] ?? 0) > 0)
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      avatar: CircleAvatar(
+                          backgroundColor: _colorFor(s), radius: 6),
+                      label: Text('${counts[s]} ${s.label}'),
+                    ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -59,7 +129,8 @@ class _BalanceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ideal = persona.idealWeeklyHours;
-    final (color, label) = _status(ideal, actual);
+    final state = persona.fedState(actual);
+    final color = _colorFor(state);
     final progress = ideal > 0 ? (actual / ideal).clamp(0.0, 1.0) : 0.0;
 
     return Padding(
@@ -79,7 +150,7 @@ class _BalanceRow extends StatelessWidget {
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(label,
+                child: Text(state.label,
                     style: TextStyle(
                         color: color, fontWeight: FontWeight.w600, fontSize: 12)),
               ),
@@ -105,14 +176,5 @@ class _BalanceRow extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  /// Colour + label from the ideal/actual relationship.
-  (Color, String) _status(double ideal, double actual) {
-    if (ideal <= 0) return (Colors.grey, 'No target');
-    final ratio = actual / ideal;
-    if (ratio < 0.5) return (Colors.orange, 'Neglected');
-    if (ratio <= 1.15) return (Colors.green, 'On track');
-    return (Colors.red, 'Overworked');
   }
 }
