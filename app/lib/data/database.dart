@@ -10,6 +10,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
 
 part 'database.g.dart';
@@ -62,13 +63,38 @@ class Personas extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Personas])
+/// Energy readings — mirrors src/shared/database/models.py `EnergyReading`.
+@DataClassName('EnergyReadingRow')
+class EnergyReadings extends Table {
+  TextColumn get id => text()();
+  TextColumn get personaId =>
+      text().references(Personas, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get energyLevel => integer()();
+  RealColumn get confidence => real().withDefault(const Constant(0.5))();
+  TextColumn get source => text().withDefault(const Constant('manual'))();
+  TextColumn get notes => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Personas, EnergyReadings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // v2 added energy_readings; create it for databases created at v1.
+          if (from < 2) await m.createTable(energyReadings);
+        },
+      );
 
   /// Persist generated personas. IDs are client-generated (offline-safe).
   Future<void> savePersonas(List<Persona> personas) async {
@@ -88,8 +114,40 @@ class AppDatabase extends _$AppDatabase {
     return rows.map(_fromRow).toList();
   }
 
+  /// Record an energy check-in.
+  Future<void> logEnergyReading(EnergyReading reading) async {
+    await into(energyReadings).insert(EnergyReadingsCompanion.insert(
+      id: _newId(),
+      personaId: reading.personaId,
+      energyLevel: reading.energyLevel,
+      timestamp: Value(reading.timestamp),
+      source: Value(reading.source),
+      notes: Value(reading.notes),
+    ));
+  }
+
+  /// Most recent readings for a persona (newest first).
+  Future<List<EnergyReading>> recentReadings(String personaId,
+      {int limit = 10}) async {
+    final rows = await (select(energyReadings)
+          ..where((t) => t.personaId.equals(personaId))
+          ..orderBy([(t) => OrderingTerm.desc(t.timestamp)])
+          ..limit(limit))
+        .get();
+    return [
+      for (final r in rows)
+        EnergyReading(
+          personaId: r.personaId,
+          energyLevel: r.energyLevel,
+          timestamp: r.timestamp,
+          source: r.source,
+          notes: r.notes,
+        )
+    ];
+  }
+
   PersonasCompanion _toCompanion(Persona p) => PersonasCompanion.insert(
-        id: _newId(),
+        id: p.id ?? _newId(),
         userId: p.userId,
         name: p.name,
         emoji: Value(p.emoji),
@@ -111,6 +169,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   Persona _fromRow(PersonaRow row) => Persona(
+        id: row.id,
         userId: row.userId,
         name: row.name,
         emoji: row.emoji,

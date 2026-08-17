@@ -70,6 +70,7 @@ class PersonaArchetypeTemplate {
 /// One aspect of a user's multitudes. Energy times are "HH:MM" strings or null.
 class Persona {
   Persona({
+    this.id,
     required this.userId,
     required this.name,
     required this.emoji,
@@ -90,6 +91,8 @@ class Persona {
     this.isActive = true,
   });
 
+  /// Local database id — null for freshly generated personas, set once stored.
+  final String? id;
   final String userId;
   final String name;
   final String emoji;

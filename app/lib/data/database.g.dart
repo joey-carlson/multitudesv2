@@ -1217,15 +1217,495 @@ class PersonasCompanion extends UpdateCompanion<PersonaRow> {
   }
 }
 
+class $EnergyReadingsTable extends EnergyReadings
+    with TableInfo<$EnergyReadingsTable, EnergyReadingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EnergyReadingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _personaIdMeta = const VerificationMeta(
+    'personaId',
+  );
+  @override
+  late final GeneratedColumn<String> personaId = GeneratedColumn<String>(
+    'persona_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES personas (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _energyLevelMeta = const VerificationMeta(
+    'energyLevel',
+  );
+  @override
+  late final GeneratedColumn<int> energyLevel = GeneratedColumn<int>(
+    'energy_level',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _confidenceMeta = const VerificationMeta(
+    'confidence',
+  );
+  @override
+  late final GeneratedColumn<double> confidence = GeneratedColumn<double>(
+    'confidence',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.5),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    personaId,
+    timestamp,
+    energyLevel,
+    confidence,
+    source,
+    notes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'energy_readings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EnergyReadingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('persona_id')) {
+      context.handle(
+        _personaIdMeta,
+        personaId.isAcceptableOrUnknown(data['persona_id']!, _personaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personaIdMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    }
+    if (data.containsKey('energy_level')) {
+      context.handle(
+        _energyLevelMeta,
+        energyLevel.isAcceptableOrUnknown(
+          data['energy_level']!,
+          _energyLevelMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_energyLevelMeta);
+    }
+    if (data.containsKey('confidence')) {
+      context.handle(
+        _confidenceMeta,
+        confidence.isAcceptableOrUnknown(data['confidence']!, _confidenceMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EnergyReadingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EnergyReadingRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      personaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}persona_id'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+      energyLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}energy_level'],
+      )!,
+      confidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}confidence'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+    );
+  }
+
+  @override
+  $EnergyReadingsTable createAlias(String alias) {
+    return $EnergyReadingsTable(attachedDatabase, alias);
+  }
+}
+
+class EnergyReadingRow extends DataClass
+    implements Insertable<EnergyReadingRow> {
+  final String id;
+  final String personaId;
+  final DateTime timestamp;
+  final int energyLevel;
+  final double confidence;
+  final String source;
+  final String? notes;
+  const EnergyReadingRow({
+    required this.id,
+    required this.personaId,
+    required this.timestamp,
+    required this.energyLevel,
+    required this.confidence,
+    required this.source,
+    this.notes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['persona_id'] = Variable<String>(personaId);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['energy_level'] = Variable<int>(energyLevel);
+    map['confidence'] = Variable<double>(confidence);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    return map;
+  }
+
+  EnergyReadingsCompanion toCompanion(bool nullToAbsent) {
+    return EnergyReadingsCompanion(
+      id: Value(id),
+      personaId: Value(personaId),
+      timestamp: Value(timestamp),
+      energyLevel: Value(energyLevel),
+      confidence: Value(confidence),
+      source: Value(source),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+    );
+  }
+
+  factory EnergyReadingRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EnergyReadingRow(
+      id: serializer.fromJson<String>(json['id']),
+      personaId: serializer.fromJson<String>(json['personaId']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      energyLevel: serializer.fromJson<int>(json['energyLevel']),
+      confidence: serializer.fromJson<double>(json['confidence']),
+      source: serializer.fromJson<String>(json['source']),
+      notes: serializer.fromJson<String?>(json['notes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'personaId': serializer.toJson<String>(personaId),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'energyLevel': serializer.toJson<int>(energyLevel),
+      'confidence': serializer.toJson<double>(confidence),
+      'source': serializer.toJson<String>(source),
+      'notes': serializer.toJson<String?>(notes),
+    };
+  }
+
+  EnergyReadingRow copyWith({
+    String? id,
+    String? personaId,
+    DateTime? timestamp,
+    int? energyLevel,
+    double? confidence,
+    String? source,
+    Value<String?> notes = const Value.absent(),
+  }) => EnergyReadingRow(
+    id: id ?? this.id,
+    personaId: personaId ?? this.personaId,
+    timestamp: timestamp ?? this.timestamp,
+    energyLevel: energyLevel ?? this.energyLevel,
+    confidence: confidence ?? this.confidence,
+    source: source ?? this.source,
+    notes: notes.present ? notes.value : this.notes,
+  );
+  EnergyReadingRow copyWithCompanion(EnergyReadingsCompanion data) {
+    return EnergyReadingRow(
+      id: data.id.present ? data.id.value : this.id,
+      personaId: data.personaId.present ? data.personaId.value : this.personaId,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      energyLevel: data.energyLevel.present
+          ? data.energyLevel.value
+          : this.energyLevel,
+      confidence: data.confidence.present
+          ? data.confidence.value
+          : this.confidence,
+      source: data.source.present ? data.source.value : this.source,
+      notes: data.notes.present ? data.notes.value : this.notes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EnergyReadingRow(')
+          ..write('id: $id, ')
+          ..write('personaId: $personaId, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('confidence: $confidence, ')
+          ..write('source: $source, ')
+          ..write('notes: $notes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    personaId,
+    timestamp,
+    energyLevel,
+    confidence,
+    source,
+    notes,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EnergyReadingRow &&
+          other.id == this.id &&
+          other.personaId == this.personaId &&
+          other.timestamp == this.timestamp &&
+          other.energyLevel == this.energyLevel &&
+          other.confidence == this.confidence &&
+          other.source == this.source &&
+          other.notes == this.notes);
+}
+
+class EnergyReadingsCompanion extends UpdateCompanion<EnergyReadingRow> {
+  final Value<String> id;
+  final Value<String> personaId;
+  final Value<DateTime> timestamp;
+  final Value<int> energyLevel;
+  final Value<double> confidence;
+  final Value<String> source;
+  final Value<String?> notes;
+  final Value<int> rowid;
+  const EnergyReadingsCompanion({
+    this.id = const Value.absent(),
+    this.personaId = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.confidence = const Value.absent(),
+    this.source = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EnergyReadingsCompanion.insert({
+    required String id,
+    required String personaId,
+    this.timestamp = const Value.absent(),
+    required int energyLevel,
+    this.confidence = const Value.absent(),
+    this.source = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       personaId = Value(personaId),
+       energyLevel = Value(energyLevel);
+  static Insertable<EnergyReadingRow> custom({
+    Expression<String>? id,
+    Expression<String>? personaId,
+    Expression<DateTime>? timestamp,
+    Expression<int>? energyLevel,
+    Expression<double>? confidence,
+    Expression<String>? source,
+    Expression<String>? notes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (personaId != null) 'persona_id': personaId,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (energyLevel != null) 'energy_level': energyLevel,
+      if (confidence != null) 'confidence': confidence,
+      if (source != null) 'source': source,
+      if (notes != null) 'notes': notes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EnergyReadingsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? personaId,
+    Value<DateTime>? timestamp,
+    Value<int>? energyLevel,
+    Value<double>? confidence,
+    Value<String>? source,
+    Value<String?>? notes,
+    Value<int>? rowid,
+  }) {
+    return EnergyReadingsCompanion(
+      id: id ?? this.id,
+      personaId: personaId ?? this.personaId,
+      timestamp: timestamp ?? this.timestamp,
+      energyLevel: energyLevel ?? this.energyLevel,
+      confidence: confidence ?? this.confidence,
+      source: source ?? this.source,
+      notes: notes ?? this.notes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (personaId.present) {
+      map['persona_id'] = Variable<String>(personaId.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (energyLevel.present) {
+      map['energy_level'] = Variable<int>(energyLevel.value);
+    }
+    if (confidence.present) {
+      map['confidence'] = Variable<double>(confidence.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EnergyReadingsCompanion(')
+          ..write('id: $id, ')
+          ..write('personaId: $personaId, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('confidence: $confidence, ')
+          ..write('source: $source, ')
+          ..write('notes: $notes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PersonasTable personas = $PersonasTable(this);
+  late final $EnergyReadingsTable energyReadings = $EnergyReadingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [personas];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    personas,
+    energyReadings,
+  ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'personas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('energy_readings', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$PersonasTableCreateCompanionBuilder = PersonasCompanion Function({
@@ -1276,6 +1756,29 @@ typedef $$PersonasTableUpdateCompanionBuilder = PersonasCompanion Function({
   Value<DateTime> updatedAt,
   Value<int> rowid,
 });
+
+final class $$PersonasTableReferences
+    extends BaseReferences<_$AppDatabase, $PersonasTable, PersonaRow> {
+  $$PersonasTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$EnergyReadingsTable, List<EnergyReadingRow>>
+  _energyReadingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.energyReadings,
+    aliasName: 'personas__id__energy_readings__persona_id',
+  );
+
+  $$EnergyReadingsTableProcessedTableManager get energyReadingsRefs {
+    final manager = $$EnergyReadingsTableTableManager(
+      $_db,
+      $_db.energyReadings,
+    ).filter((f) => f.personaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_energyReadingsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$PersonasTableFilterComposer
     extends Composer<_$AppDatabase, $PersonasTable> {
@@ -1394,6 +1897,31 @@ class $$PersonasTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> energyReadingsRefs(
+    Expression<bool> Function($$EnergyReadingsTableFilterComposer f) f,
+  ) {
+    final $$EnergyReadingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.energyReadings,
+      getReferencedColumn: (t) => t.personaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnergyReadingsTableFilterComposer(
+            $db: $db,
+            $table: $db.energyReadings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PersonasTableOrderingComposer
@@ -1609,6 +2137,31 @@ class $$PersonasTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> energyReadingsRefs<T extends Object>(
+    Expression<T> Function($$EnergyReadingsTableAnnotationComposer a) f,
+  ) {
+    final $$EnergyReadingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.energyReadings,
+      getReferencedColumn: (t) => t.personaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnergyReadingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.energyReadings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PersonasTableTableManager
@@ -1622,12 +2175,9 @@ class $$PersonasTableTableManager
           $$PersonasTableAnnotationComposer,
           $$PersonasTableCreateCompanionBuilder,
           $$PersonasTableUpdateCompanionBuilder,
-          (
-            PersonaRow,
-            BaseReferences<_$AppDatabase, $PersonasTable, PersonaRow>,
-          ),
+          (PersonaRow, $$PersonasTableReferences),
           PersonaRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool energyReadingsRefs})
         > {
   $$PersonasTableTableManager(_$AppDatabase db, $PersonasTable table)
     : super(
@@ -1737,9 +2287,44 @@ class $$PersonasTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PersonasTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({energyReadingsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (energyReadingsRefs) db.energyReadings,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (energyReadingsRefs)
+                    await $_getPrefetchedData<
+                      PersonaRow,
+                      $PersonasTable,
+                      EnergyReadingRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PersonasTableReferences
+                          ._energyReadingsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$PersonasTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).energyReadingsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.personaId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -1754,9 +2339,373 @@ typedef $$PersonasTableProcessedTableManager =
       $$PersonasTableAnnotationComposer,
       $$PersonasTableCreateCompanionBuilder,
       $$PersonasTableUpdateCompanionBuilder,
-      (PersonaRow, BaseReferences<_$AppDatabase, $PersonasTable, PersonaRow>),
+      (PersonaRow, $$PersonasTableReferences),
       PersonaRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool energyReadingsRefs})
+    >;
+typedef $$EnergyReadingsTableCreateCompanionBuilder =
+    EnergyReadingsCompanion Function({
+      required String id,
+      required String personaId,
+      Value<DateTime> timestamp,
+      required int energyLevel,
+      Value<double> confidence,
+      Value<String> source,
+      Value<String?> notes,
+      Value<int> rowid,
+    });
+typedef $$EnergyReadingsTableUpdateCompanionBuilder =
+    EnergyReadingsCompanion Function({
+      Value<String> id,
+      Value<String> personaId,
+      Value<DateTime> timestamp,
+      Value<int> energyLevel,
+      Value<double> confidence,
+      Value<String> source,
+      Value<String?> notes,
+      Value<int> rowid,
+    });
+
+final class $$EnergyReadingsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $EnergyReadingsTable, EnergyReadingRow> {
+  $$EnergyReadingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PersonasTable _personaIdTable(_$AppDatabase db) =>
+      db.personas.createAlias('energy_readings__persona_id__personas__id');
+
+  $$PersonasTableProcessedTableManager get personaId {
+    final $_column = $_itemColumn<String>('persona_id')!;
+
+    final manager = $$PersonasTableTableManager(
+      $_db,
+      $_db.personas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_personaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$EnergyReadingsTableFilterComposer
+    extends Composer<_$AppDatabase, $EnergyReadingsTable> {
+  $$EnergyReadingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PersonasTableFilterComposer get personaId {
+    final $$PersonasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personaId,
+      referencedTable: $db.personas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonasTableFilterComposer(
+            $db: $db,
+            $table: $db.personas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EnergyReadingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EnergyReadingsTable> {
+  $$EnergyReadingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PersonasTableOrderingComposer get personaId {
+    final $$PersonasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personaId,
+      referencedTable: $db.personas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonasTableOrderingComposer(
+            $db: $db,
+            $table: $db.personas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EnergyReadingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EnergyReadingsTable> {
+  $$EnergyReadingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get confidence => $composableBuilder(
+    column: $table.confidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  $$PersonasTableAnnotationComposer get personaId {
+    final $$PersonasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personaId,
+      referencedTable: $db.personas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.personas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EnergyReadingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EnergyReadingsTable,
+          EnergyReadingRow,
+          $$EnergyReadingsTableFilterComposer,
+          $$EnergyReadingsTableOrderingComposer,
+          $$EnergyReadingsTableAnnotationComposer,
+          $$EnergyReadingsTableCreateCompanionBuilder,
+          $$EnergyReadingsTableUpdateCompanionBuilder,
+          (EnergyReadingRow, $$EnergyReadingsTableReferences),
+          EnergyReadingRow,
+          PrefetchHooks Function({bool personaId})
+        > {
+  $$EnergyReadingsTableTableManager(
+    _$AppDatabase db,
+    $EnergyReadingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EnergyReadingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EnergyReadingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EnergyReadingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> personaId = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> energyLevel = const Value.absent(),
+                Value<double> confidence = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EnergyReadingsCompanion(
+                id: id,
+                personaId: personaId,
+                timestamp: timestamp,
+                energyLevel: energyLevel,
+                confidence: confidence,
+                source: source,
+                notes: notes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String personaId,
+                Value<DateTime> timestamp = const Value.absent(),
+                required int energyLevel,
+                Value<double> confidence = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EnergyReadingsCompanion.insert(
+                id: id,
+                personaId: personaId,
+                timestamp: timestamp,
+                energyLevel: energyLevel,
+                confidence: confidence,
+                source: source,
+                notes: notes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EnergyReadingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({personaId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (personaId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.personaId,
+                        referencedTable: $$EnergyReadingsTableReferences
+                            ._personaIdTable(db),
+                        referencedColumn: $$EnergyReadingsTableReferences
+                            ._personaIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$EnergyReadingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EnergyReadingsTable,
+      EnergyReadingRow,
+      $$EnergyReadingsTableFilterComposer,
+      $$EnergyReadingsTableOrderingComposer,
+      $$EnergyReadingsTableAnnotationComposer,
+      $$EnergyReadingsTableCreateCompanionBuilder,
+      $$EnergyReadingsTableUpdateCompanionBuilder,
+      (EnergyReadingRow, $$EnergyReadingsTableReferences),
+      EnergyReadingRow,
+      PrefetchHooks Function({bool personaId})
     >;
 
 class $AppDatabaseManager {
@@ -1764,4 +2713,6 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$PersonasTableTableManager get personas =>
       $$PersonasTableTableManager(_db, _db.personas);
+  $$EnergyReadingsTableTableManager get energyReadings =>
+      $$EnergyReadingsTableTableManager(_db, _db.energyReadings);
 }

@@ -5,6 +5,7 @@ library;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multitudes/data/database.dart';
+import 'package:multitudes/domain/energy_reading.dart';
 import 'package:multitudes/domain/persona_generator.dart';
 
 void main() {
@@ -49,5 +50,25 @@ void main() {
     }));
     final other = await db.activePersonas('someone-else');
     expect(other, isEmpty);
+  });
+
+  test('energy readings: log and read back newest-first for a persona',
+      () async {
+    // Arrange: persist a persona and grab its stored id
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🧠 The Professional'],
+    }));
+    final personaId = (await db.activePersonas('u1')).single.id!;
+
+    // Act
+    await db.logEnergyReading(EnergyReading(
+        personaId: personaId, energyLevel: 4, timestamp: DateTime(2026, 1, 1, 9)));
+    await db.logEnergyReading(EnergyReading(
+        personaId: personaId, energyLevel: 8, timestamp: DateTime(2026, 1, 1, 15)));
+    final readings = await db.recentReadings(personaId);
+
+    // Assert: newest first
+    expect(readings.map((r) => r.energyLevel).toList(), [8, 4]);
+    expect(readings.first.personaId, personaId);
   });
 }

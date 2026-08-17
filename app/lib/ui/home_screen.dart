@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../data/database.dart';
 import '../domain/persona.dart';
 import 'persona_detail_screen.dart';
 
 /// Home: shows the user's personas, highlights who's at peak/trough right now,
 /// and opens a detail view on tap.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.personas, this.onRetake});
+  const HomeScreen({
+    super.key,
+    required this.personas,
+    required this.db,
+    this.onRetake,
+  });
 
   final List<Persona> personas;
+  final AppDatabase db;
   final VoidCallback? onRetake;
 
   @override
@@ -30,17 +37,19 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: personas.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, i) => _PersonaCard(persona: personas[i], now: now),
+        itemBuilder: (context, i) =>
+            _PersonaCard(persona: personas[i], now: now, db: db),
       ),
     );
   }
 }
 
 class _PersonaCard extends StatelessWidget {
-  const _PersonaCard({required this.persona, required this.now});
+  const _PersonaCard({required this.persona, required this.now, required this.db});
 
   final Persona persona;
   final DateTime now;
+  final AppDatabase db;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +62,7 @@ class _PersonaCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => PersonaDetailScreen(persona: persona),
+            builder: (_) => PersonaDetailScreen(persona: persona, db: db),
           ),
         ),
         child: Padding(

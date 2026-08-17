@@ -75,7 +75,7 @@ class _RootScreenState extends State<RootScreen> {
             onComplete: _reload,
           );
         }
-        return HomeScreen(personas: personas, onRetake: _reload);
+        return HomeScreen(personas: personas, onRetake: _reload, db: _db);
       },
     );
   }
