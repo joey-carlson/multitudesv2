@@ -7,6 +7,10 @@ integrating with API and database layers.
 Following ClineRules #04: pytest with "3 line" test pattern where possible.
 """
 
+import importlib.util
+import json
+import os
+
 import pytest
 from datetime import time
 
@@ -19,6 +23,18 @@ from src.core.personas import (
     ARCHETYPE_TEMPLATES,
 )
 from src.core.personas.survey_config import get_question_by_id
+
+
+# Load the fixture exporter as a module so tests reuse its exact serializer
+# (single source of truth — no duplicated persona->dict logic).
+_EXPORTER_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "scripts", "export_persona_fixtures.py"
+)
+_spec = importlib.util.spec_from_file_location("export_persona_fixtures", _EXPORTER_PATH)
+export_persona_fixtures = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(export_persona_fixtures)
+
+_FIXTURE_CASES = json.load(open(export_persona_fixtures.FIXTURE_PATH, encoding="utf-8"))["cases"]
 
 
 class TestPersonaModels:
@@ -337,3 +353,20 @@ class TestCompletePersonaFlow:
         print(f"   - {chris.name}: {chris.archetype.value}, {chris.ideal_weekly_hours}hrs/week")
         print(f"   - Energy patterns configured correctly")
         print(f"   - Balance scoring working")
+
+
+class TestSharedFixtureContract:
+    """
+    Cross-language contract: the Python generator must match the shared fixtures
+    that the Dart (Flutter) port will also be verified against. See
+    docs/ARCHITECTURE.md §0.4. If this fails, either the logic changed (rerun
+    scripts/export_persona_fixtures.py) or the two would have drifted apart.
+    """
+
+    @pytest.mark.parametrize("case", _FIXTURE_CASES, ids=lambda c: c["name"])
+    def test_generator_matches_fixture(self, case):
+        # Arrange & Act
+        personas = generate_personas_from_survey("fixture-user", case["input"])
+        actual = [export_persona_fixtures._persona_to_dict(p) for p in personas]
+        # Assert
+        assert actual == case["expected"]

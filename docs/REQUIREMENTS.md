@@ -1,8 +1,62 @@
 # Multitudes v2.0 - Requirements Document
 
-**Version:** 2.0.0  
-**Last Updated:** 2025-12-08  
-**Status:** Initial Release
+**Version:** 2.1.0  
+**Last Updated:** 2026-08-17  
+**Status:** Local-First Redesign
+
+> **⚠️ Reading guide.** Section 0 (v2.1.0) states the **current product
+> direction** and supersedes conflicting details in the historical sections
+> (e.g. "web dashboard as primary interface", "mobile out of scope"). Historical
+> sections are retained for context per our changelog convention.
+
+---
+
+## 0. Current Product Direction (v2.1.0 — Local-First)
+
+### 0.1 What changed and why
+
+Multitudes is a **single-user, privacy-first** assistant. The product now
+targets running **self-contained on the user's own devices** (phone, tablet,
+laptop) rather than depending on hosted server infrastructure. This makes it
+genuinely private, usable offline, and cheap to run — and removes setup
+friction (no databases or Docker to stand up).
+
+### 0.2 User requirements (must have)
+
+- **R0.1 — Runs with zero setup.** A fresh install works immediately with no
+  external services, accounts, or configuration. *(Backend now satisfies this
+  on a single SQLite file — Phase 0 complete.)*
+- **R0.2 — Fully functional offline.** Core features (onboarding, viewing and
+  switching personas, energy check-ins, balance view) work with no network.
+  The device holds the source of truth.
+- **R0.3 — Cross-platform from one codebase.** iOS, Android, and desktop via a
+  Flutter client, with consistent behavior across platforms.
+- **R0.4 — Optional multi-device sync.** Users may opt in to sync across their
+  devices (and share with testers) via a self-hosted, logic-free server. Off by
+  default; the app never requires it.
+- **R0.5 — Privacy by default.** Data stays on-device unless the user enables
+  sync. Export and delete-all remain available (carried from §8.5).
+
+### 0.3 Non-functional requirements (current)
+
+- **R0.6 — No behavioral drift across languages.** Persona/energy logic is
+  authored and tested in Python and ported to Dart; both are verified against
+  shared, generated fixtures so results stay identical. See ARCHITECTURE §0.4.
+- **R0.7 — Portable data layer.** The same schema runs on on-device SQLite and
+  an optional PostgreSQL sync server (dialect-neutral models).
+- **R0.8 — Sync is safe and simple.** Differential, last-write-wins by
+  timestamp, with soft-delete tombstones so no device silently loses data.
+  See ARCHITECTURE §0.3.
+
+### 0.4 Scope adjustments vs v2.0
+
+- **Now in scope:** native mobile/tablet app (was "out of scope"); local-first
+  operation; optional self-hosted sync.
+- **Deprioritized:** the multi-database server stack (InfluxDB/Redis) and the
+  heavy on-device LLM described in §8.3 Phase 3 (Llama 3.2 on-device) — revisit
+  only if a concrete feature needs it.
+- **Unchanged:** the persona philosophy (§1–2), the adaptive-personalization
+  intent (§8), and privacy/data-control rights (§8.5).
 
 ---
 
@@ -364,4 +418,5 @@ class StorageBackend(ABC):
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.1.0 | 2026-08-17 | — | Added Section 0: local-first product direction — zero-setup, offline-capable, cross-platform Flutter client, optional self-hosted sync, privacy by default. Brought mobile into scope; deprioritized multi-DB stack and on-device LLM. |
 | 2.0.0 | 2025-12-08 | Initial | Created requirements document |
