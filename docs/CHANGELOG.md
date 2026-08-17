@@ -21,10 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Task management** — `tasks` table (Drift schema v3 + migration); add tasks
   to a persona (energy required, estimated effort) and complete them, on the
   persona detail screen.
-- **Balance dashboard** — ideal vs. actual weekly hours per persona with
-  Neglected/On-track/Overworked indicators; actual hours are derived from tasks
-  completed in the last 7 days (`Persona.balanceScore` ported from Python).
-  Verified: `flutter analyze` clean, 28 Flutter tests passing.
+- **Balance dashboard** — ideal vs. actual weekly hours per persona; actual
+  hours are derived from tasks completed in the last 7 days
+  (`Persona.balanceScore` ported from Python).
+- **Fed/over-fed/starving dashboard (roadmap F3)** — reframes balance as persona
+  "feeding": `Persona.fedState` classifier (heuristics-first), a summary header
+  with counts, attention-first ordering, and a home-screen banner surfacing
+  starving personas. Verified: `flutter analyze` clean, 32 Flutter tests passing.
+- **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
+  direction (F1–F6) with cross-cutting decisions and a build sequence.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
   `tests/fixtures/persona_generation_cases.json` from the Python generator (the
   executable spec); both the Python and Dart suites assert against the same
