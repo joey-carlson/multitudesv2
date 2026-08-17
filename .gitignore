@@ -178,6 +178,9 @@ exports/
 *.xlsx
 *.json
 *.xml
+# ...but test fixtures are source-of-truth artifacts and must be tracked
+!tests/fixtures/
+!tests/fixtures/**
 
 # Backups
 *.backup

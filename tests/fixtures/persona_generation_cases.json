@@ -1,0 +1,583 @@
+{
+  "cases": [
+    {
+      "name": "peak_option::Very early morning (5am-7am) - Dawn hours",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Very early morning (5am-7am) - Dawn hours"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "05:00",
+          "peak_end_time": "07:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Early morning (7am-9am) - Pre-business hours",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Early morning (7am-9am) - Pre-business hours"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "07:00",
+          "peak_end_time": "09:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Mid-morning (9am-12pm) - Standard productivity hours",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Mid-morning (9am-12pm) - Standard productivity hours"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "09:00",
+          "peak_end_time": "12:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Early afternoon (12pm-3pm) - Post-lunch energy",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Early afternoon (12pm-3pm) - Post-lunch energy"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "12:00",
+          "peak_end_time": "15:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Late afternoon (3pm-6pm) - End-of-day surge",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Late afternoon (3pm-6pm) - End-of-day surge"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "15:00",
+          "peak_end_time": "18:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Early evening (6pm-8pm) - After-work hours",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Early evening (6pm-8pm) - After-work hours"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "18:00",
+          "peak_end_time": "20:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Late evening (8pm-11pm) - Night owl mode",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Late evening (8pm-11pm) - Night owl mode"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "20:00",
+          "peak_end_time": "23:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::Very late night (11pm-2am) - Deep night focus",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "Very late night (11pm-2am) - Deep night focus"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "23:00",
+          "peak_end_time": "02:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::It varies significantly by day/season",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "It varies significantly by day/season"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "07:00",
+          "peak_end_time": "11:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "peak_option::I have multiple peak periods per day",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused"
+        ],
+        "overall_energy_pattern": "I have multiple peak periods per day"
+      },
+      "expected": [
+        {
+          "name": "The Professional",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "07:00",
+          "peak_end_time": "11:00",
+          "trough_start_time": null,
+          "trough_end_time": null,
+          "recovery_start_time": null,
+          "recovery_end_time": null,
+          "ideal_weekly_hours": 0.0
+        }
+      ]
+    },
+    {
+      "name": "two_personas_custom_names_with_dip_and_allocation",
+      "input": {
+        "archetypes_selection": [
+          "🧠 The Professional - Responsible, structured, goal-focused",
+          "🎨 The Artist - Expressive, introspective, imaginative"
+        ],
+        "custom_persona_names": "Executive Emma, Creative Chris",
+        "overall_energy_pattern": "Early morning (7am-9am) - Pre-business hours",
+        "energy_dip": "Yes, I notice a definite slump",
+        "energy_dip_time": "Early afternoon (12pm-2pm)",
+        "weekly_time_allocation": "Work: 40hrs, Creative: 10hrs"
+      },
+      "expected": [
+        {
+          "name": "Executive Emma",
+          "emoji": "🧠",
+          "archetype": "professional",
+          "primary_energy": "Responsible, structured, goal-focused",
+          "strengths": [
+            "Manages deadlines effectively",
+            "Strong prioritization skills",
+            "Excellent under time pressure",
+            "Tracks open loops and executes cleanly"
+          ],
+          "weaknesses": [
+            "Easily overloaded by emotional ambiguity",
+            "Can suppress personal needs",
+            "Struggles with creative sprawl",
+            "May burn out without boundaries"
+          ],
+          "trigger_conditions": [
+            "Weekday mornings",
+            "Deadlines",
+            "Meetings",
+            "Email inbox"
+          ],
+          "ideal_tasks": [
+            "Administrative tasks",
+            "Scheduling and planning",
+            "Financial decisions",
+            "High-stakes communication"
+          ],
+          "peak_start_time": "07:00",
+          "peak_end_time": "09:00",
+          "trough_start_time": "12:00",
+          "trough_end_time": "14:00",
+          "recovery_start_time": "14:00",
+          "recovery_end_time": "16:00",
+          "ideal_weekly_hours": 40.0
+        },
+        {
+          "name": "Creative Chris",
+          "emoji": "🎨",
+          "archetype": "artist",
+          "primary_energy": "Expressive, introspective, imaginative",
+          "strengths": [
+            "Recharges through creative expression",
+            "Connects ideas across domains",
+            "Thrives in immersive flow states",
+            "Values solitude and reflection"
+          ],
+          "weaknesses": [
+            "Prone to overcommitment",
+            "Romanticizes unfinished work",
+            "Dislikes administrative overhead",
+            "Can get lost in perfectionism"
+          ],
+          "trigger_conditions": [
+            "Long drives",
+            "Ambient music",
+            "Open calendar blocks",
+            "Nature walks"
+          ],
+          "ideal_tasks": [
+            "Creative writing",
+            "Music and art",
+            "Visual design",
+            "System ideation"
+          ],
+          "peak_start_time": "07:00",
+          "peak_end_time": "09:00",
+          "trough_start_time": "12:00",
+          "trough_end_time": "14:00",
+          "recovery_start_time": "14:00",
+          "recovery_end_time": "16:00",
+          "ideal_weekly_hours": 10.0
+        }
+      ]
+    },
+    {
+      "name": "create_my_own_only_yields_no_personas",
+      "input": {
+        "archetypes_selection": [
+          "✨ I'll create my own"
+        ]
+      },
+      "expected": []
+    }
+  ]
+}
