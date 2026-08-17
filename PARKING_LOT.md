@@ -78,6 +78,46 @@ enrichment.
   Overlaps roadmap **F5** (adaptive learning); build the manual-add path first,
   then layer suggestions on top.
 
+### Energizing vs. draining activities (design note — don't reinvent)
+
+Goal: capture whether events/activities energize or drain the user, and use it
+for balance and coaching. There is established science here — adopt it rather
+than inventing a scheme.
+
+**Frameworks to build on:**
+- **Russell's circumplex model of affect** (valence × arousal). The vertical
+  **arousal/activation** axis is literally "how energized vs. deactivated/tired"
+  one feels; the horizontal **valence** axis is pleasant↔unpleasant. Energizing
+  ≈ activating; draining ≈ deactivating/depleting. Widely used for momentary
+  affect measurement.
+- **Self-Determination Theory — subjective vitality** (Deci & Ryan; Ryan &
+  Frederick's Subjective Vitality Scale). Key, actionable finding: *autonomous*
+  (self-chosen) regulation can be vitalizing, while *controlled* (externally
+  pressured) regulation depletes energy. So the same activity can energize or
+  drain depending on autonomy/need-satisfaction (autonomy, competence,
+  relatedness).
+- **Mood Meter / RULER** (Yale, Marc Brackett; consumer app "How We Feel") — a
+  practical valence×energy quadrant UI; good precedent for a simple picker.
+- Supporting: effort–recovery model (Meijman & Mulder), Conservation of
+  Resources (Hobfoll), Day Reconstruction Method / Experience Sampling
+  (Kahneman) for measurement. **Caveat:** "ego depletion" (Baumeister) has
+  well-known replication problems — don't build core logic on it.
+
+**Proposed design for Multitudes (heuristics-first, on-device):**
+- Represent each activity/event's **energy impact** on a bipolar scale
+  (Draining −2 … 0 … +2 Energizing) — the circumplex arousal axis. Optionally
+  keep valence as a secondary note.
+- **Seed a guess, let the user correct (→ F5 learning):** derive an initial
+  estimate from signals we already have — persona-fit + timing (event in the
+  matched persona's peak → likely energizing; mismatch or trough → likely
+  draining) and autonomy proxy (self-chosen vs. obligatory, e.g. work meeting
+  the user didn't organize). SDT says autonomy is the strongest lever.
+- **Reuse the existing energy check-ins** as ground truth: a lightweight
+  post-event "how did that leave you?" (−2..+2 or 1–10) refines the estimate.
+- **Use it for coaching:** net weekly energy per persona / overall; flag
+  net-draining stretches; protect energizing blocks; suggest recovery when
+  draining events cluster (ties to F4 rebalancing and F5 learning).
+
 ### Deferred: persona-matching improvements (F1/F2 dependency)
 
 The initial event→persona matcher is keyword-overlap only and matched **nothing**

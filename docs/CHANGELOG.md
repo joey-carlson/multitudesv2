@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   weekday), a refresh button, a summary line (events · assigned · unmatched ·
   hidden), source calendar name per event, distinct "All day" rendering, and a
   guidance card nudging manual assignment when nothing matched.
+- **Manually add personas** — create a new persona from a preset archetype
+  (prefilled) or fully custom (name, emoji, energy window, weekly target) via a
+  home FAB; persists to the existing store. analyze clean, 53 tests.
+- **Design note** (`PARKING_LOT.md`): energizing-vs-draining activities grounded
+  in existing research (Russell's circumplex valence/arousal, SDT subjective
+  vitality, Mood Meter) with a heuristics-first design — rather than inventing.
 - **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
   direction (F1–F6); F2 and persona-matching improvements deferred with notes.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
