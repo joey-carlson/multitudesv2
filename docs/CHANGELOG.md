@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "feeding": `Persona.fedState` classifier (heuristics-first), a summary header
   with counts, attention-first ordering, and a home-screen banner surfacing
   starving personas. Verified: `flutter analyze` clean, 32 Flutter tests passing.
+- **Calendar integration (roadmap F1)** — reads the device calendar and matches
+  events to personas. Heuristic event→persona matching (keyword overlap) plus a
+  peak-window timing flag (`rankPersonasForEvent`); a Calendar screen listing
+  upcoming events with their best-fit persona and good/poor-timing notes. Native
+  macOS EventKit source behind a `CalendarSource` abstraction (calendar
+  entitlement + usage description), with a sample source fallback on other
+  platforms. Verified: `flutter analyze` clean, 36 Flutter tests passing.
 - **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
   direction (F1–F6) with cross-cutting decisions and a build sequence.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
