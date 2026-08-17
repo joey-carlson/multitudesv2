@@ -64,6 +64,20 @@ enrichment.
 - **Data controls:** export / delete-all; a single master toggle for any online
   feature (ties to REQUIREMENTS §8.5).
 
+### Prioritized: persona growth (higher priority than theme/distribution)
+
+- **Manually add personas.** Let users create new personas after using the tool
+  a while (pick from the preset archetype templates or build a fully custom one:
+  name, emoji, energy windows, ideal tasks, weekly target). Expected common
+  action once people settle in. Reuses the existing generator/templates.
+- **Suggest new personas (and adjustments).** From observation/analysis of the
+  user (calendar patterns, energy check-ins, unmatched events, task history),
+  propose either a preset archetype or an entirely new persona — and suggest
+  tweaks to existing personas' peak times. Surface as suggestions the user
+  approves. Not needed immediately, but central to the "life coach" north star.
+  Overlaps roadmap **F5** (adaptive learning); build the manual-add path first,
+  then layer suggestions on top.
+
 ### Deferred: persona-matching improvements (F1/F2 dependency)
 
 The initial event→persona matcher is keyword-overlap only and matched **nothing**
