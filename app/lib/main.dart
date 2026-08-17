@@ -46,7 +46,11 @@ class _RootScreenState extends State<RootScreen> {
   }
 
   void _reload() {
-    setState(() => _personasFuture = _db.activePersonas(_userId));
+    // Block body (not arrow): an arrow lambda would *return* the assigned
+    // Future, and setState rejects a callback that returns a Future.
+    setState(() {
+      _personasFuture = _db.activePersonas(_userId);
+    });
   }
 
   @override
