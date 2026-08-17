@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   calendar view hides ignored calendars, labels events Work/Personal, and
   filters by All/Work/Personal. Outlook is supported by adding the account to
   macOS Calendar (no OAuth). Verified: analyze clean, 43 Flutter tests passing.
+- **Hide individual calendar events** — exclude specific events (e.g. a
+  coworker's leave on a shared work calendar) from persona/energy consideration
+  via a per-event Hide/Unhide menu, with a "show hidden" toggle. Reversible,
+  stored locally (Drift schema v5); never modifies the real calendar.
 - **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
   direction (F1–F6); F2 and persona-matching improvements deferred with notes.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
