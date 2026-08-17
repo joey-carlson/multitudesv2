@@ -106,6 +106,22 @@ whole series** — accepted for now (2026-08-17). Revisit only if needed:
 - Rule-based auto-hide (e.g. all-day events, events the user isn't organizing,
   keywords like OOO/PTO/leave/holiday).
 
+### Deferred: package for tester distribution + feedback
+
+Bundle the local-first Flutter app so others can install it and give feedback.
+Options by platform/effort:
+- **iOS/macOS:** TestFlight via App Store Connect (needs a paid Apple Developer
+  account, bundle id, signing) — smoothest install + built-in tester feedback.
+- **macOS direct:** a signed + notarized `.dmg` (needs Developer ID) users can
+  download and run; simplest without App Store review.
+- **Android:** signed APK / Play Internal Testing track.
+- **Cross-platform:** Firebase App Distribution (iOS+Android) for quick tester
+  builds without the store.
+- **Feedback:** in-app "Send feedback" (email/form export) or a simple
+  issues link; consider bundling an anonymized data export toggle.
+Note: this is per-device install of the app itself — distinct from the old
+"Remote Hosting for Testers" item, which assumed a shared server backend.
+
 ### Deferred: appearance / theme
 
 Light / Dark / Match-system theme selection, persisted locally. App currently

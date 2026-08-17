@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coworker's leave on a shared work calendar) from persona/energy consideration
   via a per-event Hide/Unhide menu, with a "show hidden" toggle. Reversible,
   stored locally (Drift schema v5); never modifies the real calendar.
+- **Manual persona assignment for events** — assign/change/clear a persona per
+  event when auto-matching misses; persists (Drift schema v6) and overrides
+  matching. Calendar time now folds into the fed/starving balance (attributed
+  via the effective persona over the next 7 days, combined with completed
+  tasks), so an assignment visibly feeds its persona. analyze clean, 48 tests.
 - **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
   direction (F1–F6); F2 and persona-matching improvements deferred with notes.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
