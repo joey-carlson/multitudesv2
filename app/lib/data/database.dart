@@ -10,6 +10,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../domain/calendar_classification.dart';
 import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
@@ -99,24 +100,53 @@ class Tasks extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Personas, EnergyReadings, Tasks])
+/// User's work/personal/ignore tag per calendar id.
+@DataClassName('CalendarPrefRow')
+class CalendarPrefs extends Table {
+  TextColumn get calendarId => text()();
+  TextColumn get kind => text()(); // stores CalendarKind.name
+
+  @override
+  Set<Column> get primaryKey => {calendarId};
+}
+
+@DriftDatabase(tables: [Personas, EnergyReadings, Tasks, CalendarPrefs])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
-          // v2 added energy_readings; v3 added tasks. Create whichever the
-          // existing database predates.
+          // Create whichever tables the existing database predates.
           if (from < 2) await m.createTable(energyReadings);
           if (from < 3) await m.createTable(tasks);
+          if (from < 4) await m.createTable(calendarPrefs);
         },
       );
+
+  /// User overrides of calendar classification, by calendar id.
+  Future<Map<String, CalendarKind>> calendarKinds() async {
+    final rows = await select(calendarPrefs).get();
+    return {
+      for (final r in rows)
+        r.calendarId: CalendarKind.values.firstWhere(
+          (k) => k.name == r.kind,
+          orElse: () => CalendarKind.unset,
+        )
+    };
+  }
+
+  /// Set (or clear) a calendar's classification.
+  Future<void> setCalendarKind(String calendarId, CalendarKind kind) async {
+    await into(calendarPrefs).insertOnConflictUpdate(
+      CalendarPrefsCompanion.insert(calendarId: calendarId, kind: kind.name),
+    );
+  }
 
   /// Persist generated personas. IDs are client-generated (offline-safe).
   Future<void> savePersonas(List<Persona> personas) async {

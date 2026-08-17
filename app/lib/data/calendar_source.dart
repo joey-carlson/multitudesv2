@@ -8,6 +8,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
+import '../domain/calendar_classification.dart';
 import '../domain/calendar_event.dart';
 
 /// Picks the best available calendar source for the current platform: the
@@ -32,6 +33,9 @@ abstract class CalendarSource {
   /// Request any needed permission. Returns true if events can be read.
   Future<bool> requestAccess();
 
+  /// The calendars available from this source.
+  Future<List<CalendarInfo>> listCalendars();
+
   /// Events overlapping [start, end].
   Future<List<CalendarEvent>> eventsInRange(DateTime start, DateTime end);
 }
@@ -49,6 +53,22 @@ class SampleCalendarSource implements CalendarSource {
   Future<bool> requestAccess() async => true;
 
   @override
+  Future<List<CalendarInfo>> listCalendars() async => [
+        CalendarInfo(
+            id: 'cal-work',
+            title: 'Work',
+            account: 'work@example.com',
+            type: 'exchange'),
+        CalendarInfo(
+            id: 'cal-personal',
+            title: 'Personal',
+            account: 'iCloud',
+            type: 'calDAV'),
+        CalendarInfo(
+            id: 'cal-home', title: 'Home', account: 'iCloud', type: 'calDAV'),
+      ];
+
+  @override
   Future<List<CalendarEvent>> eventsInRange(DateTime start, DateTime end) async {
     final day0 = DateTime(start.year, start.month, start.day);
     DateTime at(int dayOffset, int hour, [int minute = 0]) =>
@@ -62,6 +82,7 @@ class SampleCalendarSource implements CalendarSource {
         start: at(0, 8),
         end: at(0, 9, 30),
         calendarName: 'Work',
+        calendarId: 'cal-work',
       ),
       CalendarEvent(
         id: 's2',
@@ -70,6 +91,7 @@ class SampleCalendarSource implements CalendarSource {
         start: at(0, 9),
         end: at(0, 10, 30),
         calendarName: 'Personal',
+        calendarId: 'cal-personal',
       ),
       CalendarEvent(
         id: 's3',
@@ -78,6 +100,7 @@ class SampleCalendarSource implements CalendarSource {
         start: at(1, 10),
         end: at(1, 10, 30),
         calendarName: 'Work',
+        calendarId: 'cal-work',
       ),
       CalendarEvent(
         id: 's4',
@@ -86,6 +109,7 @@ class SampleCalendarSource implements CalendarSource {
         start: at(1, 15),
         end: at(1, 17),
         calendarName: 'Home',
+        calendarId: 'cal-home',
       ),
       CalendarEvent(
         id: 's5',
@@ -94,6 +118,7 @@ class SampleCalendarSource implements CalendarSource {
         start: at(2, 7),
         end: at(2, 8),
         calendarName: 'Work',
+        calendarId: 'cal-work',
       ),
     ];
 
@@ -125,6 +150,24 @@ class DeviceCalendarSource implements CalendarSource {
   }
 
   @override
+  Future<List<CalendarInfo>> listCalendars() async {
+    try {
+      final raw = await _channel.invokeMethod<List<dynamic>>('listCalendars');
+      return (raw ?? const []).map((item) {
+        final m = (item as Map).cast<String, dynamic>();
+        return CalendarInfo(
+          id: m['id'] as String,
+          title: (m['title'] as String?) ?? '(untitled)',
+          account: m['account'] as String?,
+          type: m['type'] as String?,
+        );
+      }).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  @override
   Future<List<CalendarEvent>> eventsInRange(DateTime start, DateTime end) async {
     try {
       final raw = await _channel.invokeMethod<List<dynamic>>('eventsInRange', {
@@ -143,6 +186,7 @@ class DeviceCalendarSource implements CalendarSource {
           end: DateTime.fromMillisecondsSinceEpoch(m['endMs'] as int),
           allDay: (m['allDay'] as bool?) ?? false,
           calendarName: m['calendar'] as String?,
+          calendarId: m['calendarId'] as String?,
         );
       }).toList();
     } catch (_) {

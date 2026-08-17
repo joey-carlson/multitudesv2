@@ -10,6 +10,7 @@ class CalendarEvent {
     required this.end,
     this.notes,
     this.calendarName,
+    this.calendarId,
     this.allDay = false,
   });
 
@@ -19,6 +20,7 @@ class CalendarEvent {
   final DateTime end;
   final String? notes;
   final String? calendarName;
+  final String? calendarId;
   final bool allDay;
 
   Duration get duration => end.difference(start);

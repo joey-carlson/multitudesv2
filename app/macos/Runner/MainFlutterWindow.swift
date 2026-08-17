@@ -34,6 +34,8 @@ class CalendarChannel {
     switch call.method {
     case "requestAccess":
       requestAccess(result: result)
+    case "listCalendars":
+      listCalendars(result: result)
     case "eventsInRange":
       guard let args = call.arguments as? [String: Any],
             let startMs = args["startMs"] as? NSNumber,
@@ -59,6 +61,29 @@ class CalendarChannel {
     }
   }
 
+  private func listCalendars(result: @escaping FlutterResult) {
+    let mapped: [[String: Any]] = store.calendars(for: .event).map { c in
+      [
+        "id": c.calendarIdentifier,
+        "title": c.title,
+        "account": c.source?.title ?? NSNull(),
+        "type": Self.typeName(c.type),
+      ]
+    }
+    result(mapped)
+  }
+
+  private static func typeName(_ t: EKCalendarType) -> String {
+    switch t {
+    case .local: return "local"
+    case .calDAV: return "calDAV"
+    case .exchange: return "exchange"
+    case .subscription: return "subscription"
+    case .birthday: return "birthday"
+    @unknown default: return "other"
+    }
+  }
+
   private func fetchEvents(startMs: Double, endMs: Double, result: @escaping FlutterResult) {
     let start = Date(timeIntervalSince1970: startMs / 1000.0)
     let end = Date(timeIntervalSince1970: endMs / 1000.0)
@@ -72,6 +97,7 @@ class CalendarChannel {
         "endMs": Int(e.endDate.timeIntervalSince1970 * 1000),
         "allDay": e.isAllDay,
         "calendar": e.calendar?.title ?? NSNull(),
+        "calendarId": e.calendar?.calendarIdentifier ?? NSNull(),
       ]
     }
     result(mapped)

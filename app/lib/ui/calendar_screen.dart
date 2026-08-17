@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../data/calendar_source.dart';
+import '../data/database.dart';
+import '../domain/calendar_classification.dart';
 import '../domain/calendar_event.dart';
 import '../domain/calendar_matcher.dart';
 import '../domain/persona.dart';
+import 'calendars_settings_screen.dart';
 
-/// Shows upcoming calendar events, each matched to the best-fit persona(s) and
-/// flagged for whether it's scheduled during that persona's strong hours.
+/// Upcoming calendar events matched to the best-fit persona, with work/personal
+/// labels. Ignored calendars are hidden; a filter narrows to Work or Personal.
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({
     super.key,
     required this.source,
     required this.personas,
+    required this.db,
   });
 
   final CalendarSource source;
   final List<Persona> personas;
+  final AppDatabase db;
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -23,6 +28,7 @@ class CalendarScreen extends StatefulWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   late Future<_CalendarData> _future;
+  CalendarKind? _filter; // null = all (work + personal + unset)
 
   @override
   void initState() {
@@ -32,17 +38,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<_CalendarData> _load() async {
     final granted = await widget.source.requestAccess();
-    if (!granted) return _CalendarData(granted: false, events: const []);
+    if (!granted) return _CalendarData(granted: false, events: const [], kinds: const {});
+
+    final calendars = await widget.source.listCalendars();
+    final overrides = await widget.db.calendarKinds();
+    final kinds = {
+      for (final c in calendars) c.id: effectiveKind(c, overrides)
+    };
+
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
-    return _CalendarData(granted: true, events: events);
+    return _CalendarData(granted: true, events: events, kinds: kinds);
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => CalendarsSettingsScreen(source: widget.source, db: widget.db),
+    ));
+    setState(() => _future = _load());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
+      appBar: AppBar(
+        title: const Text('Calendar'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Classify calendars',
+            onPressed: _openSettings,
+          ),
+        ],
+      ),
       body: FutureBuilder<_CalendarData>(
         future: _future,
         builder: (context, snap) {
@@ -54,26 +83,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
             return const _Message(
                 '🔒 Calendar access was denied.\nEnable it in system settings to see your events.');
           }
-          if (data.events.isEmpty) {
-            return const _Message('No events in the next 7 days.');
-          }
-          return ListView(
-            padding: const EdgeInsets.all(16),
+
+          CalendarKind kindOf(CalendarEvent e) => e.calendarId == null
+              ? CalendarKind.unset
+              : (data.kinds[e.calendarId] ?? CalendarKind.unset);
+
+          // Hide ignored calendars, then apply the work/personal filter.
+          final visible = data.events.where((e) {
+            final k = kindOf(e);
+            if (k == CalendarKind.ignore) return false;
+            if (_filter == null) return true;
+            return k == _filter;
+          }).toList();
+
+          return Column(
             children: [
-              if (!widget.source.isLive)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Showing ${widget.source.label.toLowerCase()} — connect your '
-                    'device calendar to see real events.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                ),
-              for (final e in data.events)
-                _EventCard(
-                  event: e,
-                  matches: rankPersonasForEvent(e, widget.personas),
-                ),
+              _FilterBar(
+                filter: _filter,
+                onChanged: (f) => setState(() => _filter = f),
+              ),
+              Expanded(
+                child: visible.isEmpty
+                    ? const _Message('No matching events in the next 7 days.')
+                    : ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          if (!widget.source.isLive)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                'Showing ${widget.source.label.toLowerCase()} — '
+                                'connect your device calendar to see real events.',
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 13),
+                              ),
+                            ),
+                          for (final e in visible)
+                            _EventCard(
+                              event: e,
+                              kind: kindOf(e),
+                              matches:
+                                  rankPersonasForEvent(e, widget.personas),
+                            ),
+                        ],
+                      ),
+              ),
             ],
           );
         },
@@ -83,15 +137,46 @@ class _CalendarScreenState extends State<CalendarScreen> {
 }
 
 class _CalendarData {
-  _CalendarData({required this.granted, required this.events});
+  _CalendarData({required this.granted, required this.events, required this.kinds});
   final bool granted;
   final List<CalendarEvent> events;
+  final Map<String, CalendarKind> kinds;
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.filter, required this.onChanged});
+
+  final CalendarKind? filter;
+  final ValueChanged<CalendarKind?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget chip(String label, CalendarKind? value) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: FilterChip(
+            label: Text(label),
+            selected: filter == value,
+            onSelected: (_) => onChanged(value),
+          ),
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          chip('All', null),
+          chip('Work', CalendarKind.work),
+          chip('Personal', CalendarKind.personal),
+        ],
+      ),
+    );
+  }
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event, required this.matches});
+  const _EventCard({required this.event, required this.kind, required this.matches});
 
   final CalendarEvent event;
+  final CalendarKind kind;
   final List<PersonaMatch> matches;
 
   @override
@@ -103,8 +188,17 @@ class _EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(event.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(event.title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+                if (kind == CalendarKind.work || kind == CalendarKind.personal)
+                  _KindChip(kind: kind),
+              ],
+            ),
             const SizedBox(height: 2),
             Text(_when(event), style: TextStyle(color: Colors.grey[600])),
             const SizedBox(height: 8),
@@ -125,6 +219,26 @@ class _EventCard extends StatelessWidget {
     final d = e.start;
     return '${days[d.weekday - 1]} ${two(d.hour)}:${two(d.minute)}'
         '–${two(e.end.hour)}:${two(e.end.minute)}';
+  }
+}
+
+class _KindChip extends StatelessWidget {
+  const _KindChip({required this.kind});
+
+  final CalendarKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = kind == CalendarKind.work ? Colors.indigo : Colors.teal;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(kind.label,
+          style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+    );
   }
 }
 
@@ -149,8 +263,7 @@ class _MatchLine extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text('$icon $note',
-              style: TextStyle(color: color, fontSize: 13)),
+          child: Text('$icon $note', style: TextStyle(color: color, fontSize: 13)),
         ),
       ],
     );

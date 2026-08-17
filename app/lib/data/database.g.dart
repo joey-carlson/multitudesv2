@@ -2298,12 +2298,231 @@ class TasksCompanion extends UpdateCompanion<TaskRow> {
   }
 }
 
+class $CalendarPrefsTable extends CalendarPrefs
+    with TableInfo<$CalendarPrefsTable, CalendarPrefRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CalendarPrefsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _calendarIdMeta = const VerificationMeta(
+    'calendarId',
+  );
+  @override
+  late final GeneratedColumn<String> calendarId = GeneratedColumn<String>(
+    'calendar_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [calendarId, kind];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'calendar_prefs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CalendarPrefRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('calendar_id')) {
+      context.handle(
+        _calendarIdMeta,
+        calendarId.isAcceptableOrUnknown(data['calendar_id']!, _calendarIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_calendarIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {calendarId};
+  @override
+  CalendarPrefRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CalendarPrefRow(
+      calendarId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}calendar_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+    );
+  }
+
+  @override
+  $CalendarPrefsTable createAlias(String alias) {
+    return $CalendarPrefsTable(attachedDatabase, alias);
+  }
+}
+
+class CalendarPrefRow extends DataClass implements Insertable<CalendarPrefRow> {
+  final String calendarId;
+  final String kind;
+  const CalendarPrefRow({required this.calendarId, required this.kind});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['calendar_id'] = Variable<String>(calendarId);
+    map['kind'] = Variable<String>(kind);
+    return map;
+  }
+
+  CalendarPrefsCompanion toCompanion(bool nullToAbsent) {
+    return CalendarPrefsCompanion(
+      calendarId: Value(calendarId),
+      kind: Value(kind),
+    );
+  }
+
+  factory CalendarPrefRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CalendarPrefRow(
+      calendarId: serializer.fromJson<String>(json['calendarId']),
+      kind: serializer.fromJson<String>(json['kind']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'calendarId': serializer.toJson<String>(calendarId),
+      'kind': serializer.toJson<String>(kind),
+    };
+  }
+
+  CalendarPrefRow copyWith({String? calendarId, String? kind}) =>
+      CalendarPrefRow(
+        calendarId: calendarId ?? this.calendarId,
+        kind: kind ?? this.kind,
+      );
+  CalendarPrefRow copyWithCompanion(CalendarPrefsCompanion data) {
+    return CalendarPrefRow(
+      calendarId: data.calendarId.present
+          ? data.calendarId.value
+          : this.calendarId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarPrefRow(')
+          ..write('calendarId: $calendarId, ')
+          ..write('kind: $kind')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(calendarId, kind);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CalendarPrefRow &&
+          other.calendarId == this.calendarId &&
+          other.kind == this.kind);
+}
+
+class CalendarPrefsCompanion extends UpdateCompanion<CalendarPrefRow> {
+  final Value<String> calendarId;
+  final Value<String> kind;
+  final Value<int> rowid;
+  const CalendarPrefsCompanion({
+    this.calendarId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CalendarPrefsCompanion.insert({
+    required String calendarId,
+    required String kind,
+    this.rowid = const Value.absent(),
+  }) : calendarId = Value(calendarId),
+       kind = Value(kind);
+  static Insertable<CalendarPrefRow> custom({
+    Expression<String>? calendarId,
+    Expression<String>? kind,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (calendarId != null) 'calendar_id': calendarId,
+      if (kind != null) 'kind': kind,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CalendarPrefsCompanion copyWith({
+    Value<String>? calendarId,
+    Value<String>? kind,
+    Value<int>? rowid,
+  }) {
+    return CalendarPrefsCompanion(
+      calendarId: calendarId ?? this.calendarId,
+      kind: kind ?? this.kind,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (calendarId.present) {
+      map['calendar_id'] = Variable<String>(calendarId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarPrefsCompanion(')
+          ..write('calendarId: $calendarId, ')
+          ..write('kind: $kind, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PersonasTable personas = $PersonasTable(this);
   late final $EnergyReadingsTable energyReadings = $EnergyReadingsTable(this);
   late final $TasksTable tasks = $TasksTable(this);
+  late final $CalendarPrefsTable calendarPrefs = $CalendarPrefsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2312,6 +2531,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     personas,
     energyReadings,
     tasks,
+    calendarPrefs,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3838,6 +4058,151 @@ typedef $$TasksTableProcessedTableManager =
       TaskRow,
       PrefetchHooks Function({bool personaId})
     >;
+typedef $$CalendarPrefsTableCreateCompanionBuilder =
+    CalendarPrefsCompanion Function({
+      required String calendarId,
+      required String kind,
+      Value<int> rowid,
+    });
+typedef $$CalendarPrefsTableUpdateCompanionBuilder =
+    CalendarPrefsCompanion Function({
+      Value<String> calendarId,
+      Value<String> kind,
+      Value<int> rowid,
+    });
+
+class $$CalendarPrefsTableFilterComposer
+    extends Composer<_$AppDatabase, $CalendarPrefsTable> {
+  $$CalendarPrefsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get calendarId => $composableBuilder(
+    column: $table.calendarId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CalendarPrefsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CalendarPrefsTable> {
+  $$CalendarPrefsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get calendarId => $composableBuilder(
+    column: $table.calendarId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CalendarPrefsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CalendarPrefsTable> {
+  $$CalendarPrefsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get calendarId => $composableBuilder(
+    column: $table.calendarId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+}
+
+class $$CalendarPrefsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CalendarPrefsTable,
+          CalendarPrefRow,
+          $$CalendarPrefsTableFilterComposer,
+          $$CalendarPrefsTableOrderingComposer,
+          $$CalendarPrefsTableAnnotationComposer,
+          $$CalendarPrefsTableCreateCompanionBuilder,
+          $$CalendarPrefsTableUpdateCompanionBuilder,
+          (
+            CalendarPrefRow,
+            BaseReferences<_$AppDatabase, $CalendarPrefsTable, CalendarPrefRow>,
+          ),
+          CalendarPrefRow,
+          PrefetchHooks Function()
+        > {
+  $$CalendarPrefsTableTableManager(_$AppDatabase db, $CalendarPrefsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CalendarPrefsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CalendarPrefsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CalendarPrefsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> calendarId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarPrefsCompanion(
+                calendarId: calendarId,
+                kind: kind,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String calendarId,
+                required String kind,
+                Value<int> rowid = const Value.absent(),
+              }) => CalendarPrefsCompanion.insert(
+                calendarId: calendarId,
+                kind: kind,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CalendarPrefsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CalendarPrefsTable,
+      CalendarPrefRow,
+      $$CalendarPrefsTableFilterComposer,
+      $$CalendarPrefsTableOrderingComposer,
+      $$CalendarPrefsTableAnnotationComposer,
+      $$CalendarPrefsTableCreateCompanionBuilder,
+      $$CalendarPrefsTableUpdateCompanionBuilder,
+      (
+        CalendarPrefRow,
+        BaseReferences<_$AppDatabase, $CalendarPrefsTable, CalendarPrefRow>,
+      ),
+      CalendarPrefRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3848,4 +4213,6 @@ class $AppDatabaseManager {
       $$EnergyReadingsTableTableManager(_db, _db.energyReadings);
   $$TasksTableTableManager get tasks =>
       $$TasksTableTableManager(_db, _db.tasks);
+  $$CalendarPrefsTableTableManager get calendarPrefs =>
+      $$CalendarPrefsTableTableManager(_db, _db.calendarPrefs);
 }

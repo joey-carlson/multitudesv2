@@ -5,6 +5,7 @@ library;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multitudes/data/database.dart';
+import 'package:multitudes/domain/calendar_classification.dart';
 import 'package:multitudes/domain/energy_reading.dart';
 import 'package:multitudes/domain/persona_generator.dart';
 import 'package:multitudes/domain/task.dart';
@@ -127,5 +128,20 @@ void main() {
 
     final hours = await db.actualWeeklyHours('u1', since: since);
     expect(hours[pid], closeTo(1.5, 1e-9));
+  });
+
+  test('calendar kinds: set, read back, and update', () async {
+    expect(await db.calendarKinds(), isEmpty);
+
+    await db.setCalendarKind('cal-1', CalendarKind.work);
+    await db.setCalendarKind('cal-2', CalendarKind.personal);
+    var kinds = await db.calendarKinds();
+    expect(kinds['cal-1'], CalendarKind.work);
+    expect(kinds['cal-2'], CalendarKind.personal);
+
+    // Overwrite existing (upsert on primary key)
+    await db.setCalendarKind('cal-1', CalendarKind.ignore);
+    kinds = await db.calendarKinds();
+    expect(kinds['cal-1'], CalendarKind.ignore);
   });
 }

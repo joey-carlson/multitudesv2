@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
                 builder: (_) => CalendarScreen(
                   source: resolveCalendarSource(),
                   personas: personas,
+                  db: db,
                 ),
               ),
             ),
