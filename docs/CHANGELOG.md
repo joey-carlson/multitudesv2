@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Flutter app scaffold (`app/`)** — local-first client (Phase 2). Dart port of
+  the persona domain (archetypes, templates, generator), on-device SQLite via
+  Drift, an onboarding survey screen and a home screen. Verified end-to-end with
+  `flutter analyze` clean and 16 tests passing.
+- **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
+  `tests/fixtures/persona_generation_cases.json` from the Python generator (the
+  executable spec); both the Python and Dart suites assert against the same
+  fixtures, so any Python↔Dart logic drift fails a test. See ARCHITECTURE §0.4.
+- Design docs updated to v2.1.0: ARCHITECTURE §0 (smart-device/dumb-server,
+  differential LWW sync) and REQUIREMENTS §0 (local-first product direction).
+
 ### Changed
 - **Local-first architecture**: collapsed the three-service datastore
   (PostgreSQL + InfluxDB + Redis) to a single self-contained **SQLite** file.
