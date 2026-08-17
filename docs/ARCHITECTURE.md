@@ -50,6 +50,22 @@ inverted from the original server-centric design:
                  └─────────────────────────┘
 ```
 
+### 0.1a Design principle: evidence-based PA/coach features
+
+Personal-assistant / "life coach" features (persona balance, energy/mood,
+coaching, scheduling, behavior nudges) must be **grounded in published science
+or authoritative best practices** — research the established frameworks first
+and base the design on them; don't invent a scheme unless the established ones
+genuinely don't fit. Cite the sources in the design.
+
+Rationale: these features make claims about human wellbeing/behavior; grounding
+them in validated models makes them more credible and less rework-prone.
+Implementations should stay heuristics-first, on-device, and privacy-preserving
+per the local-first architecture, and should note replication caveats (e.g. do
+not build on "ego depletion"). Exemplar: the energizing-vs-draining design note
+in `PARKING_LOT.md` (Russell's circumplex model, SDT subjective vitality, Mood
+Meter).
+
 ### 0.2 Technology stack (current)
 
 | Concern            | Choice                                                        |
