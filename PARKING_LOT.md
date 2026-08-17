@@ -106,6 +106,11 @@ whole series** — accepted for now (2026-08-17). Revisit only if needed:
 - Rule-based auto-hide (e.g. all-day events, events the user isn't organizing,
   keywords like OOO/PTO/leave/holiday).
 
+### Deferred: appearance / theme
+
+Light / Dark / Match-system theme selection, persisted locally. App currently
+uses a single Material 3 light-ish theme seeded from the brand color.
+
 ### Cross-cutting decisions (need resolution before building)
 
 - **A. Calendar integration is on-device (EventKit).** Read-only to start; adds
