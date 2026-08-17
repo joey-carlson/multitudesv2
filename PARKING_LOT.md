@@ -4,6 +4,95 @@ This document tracks future improvements and features that are planned but not y
 
 ---
 
+## Persona Intelligence Roadmap (v2.1+) — CURRENT DIRECTION
+
+**Added:** 2026-08-17
+**Theme:** Move from a persona *tracker* to a persona *coach* — use the user's
+real calendar and usage data to keep their personas balanced. Everything below
+must respect the local-first, privacy-by-default architecture (ARCHITECTURE §0):
+on-device by default, offline-capable, network only for clearly-gated optional
+enrichment.
+
+### Feature list (not in priority order)
+
+**F1 — Read the device calendar and map events to personas.**
+- On-device calendar access via EventKit / Android Calendar Provider (Flutter
+  `device_calendar`). macOS/iOS need the calendar entitlement + usage strings.
+  Read-only first.
+- Associate each event with persona(s) via heuristics first (match event
+  title/notes against a persona's `ideal_tasks` / `trigger_conditions`
+  keywords), with manual override. Optional AI classification later (see
+  Decision C). Fits local-first.
+
+**F2 — Suggest ideal persona(s) per event + time-block adjustments.**
+- For each event: rank persona fit, and check whether it's scheduled inside the
+  matched persona's peak window (reuse `Persona.energyStateAt` / peak times).
+  If misaligned, suggest a better block. Deterministic, on-device, testable.
+- Later: two-way calendar (write accepted adjustments back) — higher risk, gate
+  behind explicit confirmation.
+
+**F3 — "Fed / over-fed / starving" dashboard.**
+- Evolve the existing Balance dashboard: actual weekly hours per persona become
+  `completed-task durations + calendar time attributed to that persona`.
+  Re-label to fed / over-fed / starving. On-device.
+
+**F4 — Rebalancing suggestions.**
+- (a) On-device: for starving personas, suggest activities/downtime that match
+  their `ideal_tasks` and fit their peak windows and open calendar slots.
+- (b) **Online (optional):** look up local events/classes/opportunities to feed
+  starving personas — requires network + a third-party API (events/places).
+  Off by default; see Decision C.
+
+**F5 — Adaptive learning over time.**
+- Use accumulated `energy_readings` + task/calendar actuals to detect that a
+  persona's real peak differs from the survey answer (suggest adjusting the
+  window) or that activity clusters don't map to any persona (suggest a new
+  one). Surface as suggestions for user approval — never silently mutate.
+  Realizes the original "adaptive personalization" intent, on-device.
+
+**F6 — Additional suggestions (proposed):**
+- **Daily briefing / "right now" coach:** given the time, calendar, and persona
+  states, a short "who to be now and what to do" summary.
+- **Notifications/reminders:** finally use the `reminder_style` answer collected
+  at onboarding (local notifications; nudge check-ins / persona switches).
+- **Persona-conflict detection:** flag overlapping events that demand different
+  personas at once.
+- **Energy trend chart:** predicted peak windows vs. actual check-ins — also the
+  evidence feed for F5.
+- **Quick "feed" logging:** log time spent on a persona without a full task.
+- **Explainability:** every suggestion shows *why* (which signals drove it).
+- **Data controls:** export / delete-all; a single master toggle for any online
+  feature (ties to REQUIREMENTS §8.5).
+
+### Cross-cutting decisions (need resolution before building)
+
+- **A. Calendar integration is on-device (EventKit).** Read-only to start; adds
+  a sandbox entitlement + usage description. Low privacy risk.
+- **B. Intelligence is heuristics-first.** Persona-fit, scheduling suggestions,
+  fed/starving, and rebalancing are all deterministic on-device logic using data
+  we already have (ideal_tasks, triggers, peak windows, energy readings, hours).
+  Keep them private, offline, and covered by shared fixtures (as with the
+  generator). This is also the cheapest and most explainable path.
+- **C. Online-enrichment boundary.** Local-events lookup (F4b) and any cloud LLM
+  are the only pieces needing network. Introduce an explicit **optional online
+  layer**: off by default, user-consented, graceful offline degradation, and
+  documented in ARCHITECTURE. Preserves the local-first/privacy promise while
+  enabling connected features. Requires choosing provider(s) + key handling.
+
+### Suggested build sequence (dependency order)
+
+1. **F1** — calendar read + entitlements (foundation).
+2. **F2** — persona-fit + schedule-alignment suggestions (needs F1 + energy model).
+3. **F3** — fed/starving dashboard (extend Balance with calendar hours).
+4. **F4a** — on-device rebalancing suggestions; then **F4b** as optional online.
+5. **F5** — adaptive learning (needs accumulated data, so latest).
+6. **F6** — weave in throughout (briefing, notifications, trends, explainability).
+
+Cross-cutting **Phase 3 sync** (ARCHITECTURE §0.3) remains independent and can
+land whenever multi-device/tester access is wanted.
+
+---
+
 ## 1. Remote Hosting & Online Access for Testers
 
 **Priority:** High  
