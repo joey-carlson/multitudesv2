@@ -22,6 +22,23 @@ enum PersonaArchetype {
   final String value;
 }
 
+/// A persona's energy state at a point in time (mirrors the Python
+/// Peak-Trough-Recovery model in persona_models.py).
+enum EnergyState {
+  peak('Peak', 10),
+  recovery('Recovery', 7),
+  neutral('Neutral', 5),
+  trough('Trough', 3);
+
+  const EnergyState(this.label, this.level);
+
+  /// Short human label.
+  final String label;
+
+  /// Predicted energy level (1-10) for this state.
+  final int level;
+}
+
 /// Template for a common archetype, mirroring PersonaArchetypeTemplate.
 /// Energy times are stored as "HH:MM" strings (matching the DB representation).
 class PersonaArchetypeTemplate {
@@ -91,6 +108,37 @@ class Persona {
   final double idealWeeklyHours;
   final double actualWeeklyHours;
   final bool isActive;
+
+  /// Energy state at [now] (defaults to the current time). Checks peak, then
+  /// trough, then recovery windows; neutral otherwise — matching the Python
+  /// `get_energy_level` precedence.
+  EnergyState energyStateAt(DateTime now) {
+    final minutes = now.hour * 60 + now.minute;
+    if (_inWindow(peakStartTime, peakEndTime, minutes)) return EnergyState.peak;
+    if (_inWindow(troughStartTime, troughEndTime, minutes)) return EnergyState.trough;
+    if (_inWindow(recoveryStartTime, recoveryEndTime, minutes)) {
+      return EnergyState.recovery;
+    }
+    return EnergyState.neutral;
+  }
+
+  /// Whether [now] falls in this persona's peak window.
+  bool isAtPeak(DateTime now) => energyStateAt(now) == EnergyState.peak;
+
+  /// True if [minutes] (since midnight) is within [start]–[end] ("HH:MM"),
+  /// handling windows that cross midnight (e.g. 23:00–02:00).
+  static bool _inWindow(String? start, String? end, int minutes) {
+    if (start == null || end == null) return false;
+    final s = _toMinutes(start);
+    final e = _toMinutes(end);
+    if (s <= e) return minutes >= s && minutes <= e;
+    return minutes >= s || minutes <= e; // crosses midnight
+  }
+
+  static int _toMinutes(String hhmm) {
+    final parts = hhmm.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
 
   /// Language-neutral view matching scripts/export_persona_fixtures.py
   /// `_persona_to_dict` (id/timestamps excluded — not stable across runs).
