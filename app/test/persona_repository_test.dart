@@ -155,4 +155,19 @@ void main() {
     await db.setEventHidden('evt-1', false);
     expect(await db.hiddenEventIds(), {'evt-2'});
   });
+
+  test('event persona overrides: set, read back, update, and clear', () async {
+    expect(await db.eventPersonaMap(), isEmpty);
+
+    await db.setEventPersona('evt-1', 'persona-a');
+    expect((await db.eventPersonaMap())['evt-1'], 'persona-a');
+
+    // Reassign (upsert)
+    await db.setEventPersona('evt-1', 'persona-b');
+    expect((await db.eventPersonaMap())['evt-1'], 'persona-b');
+
+    // Clear
+    await db.setEventPersona('evt-1', null);
+    expect(await db.eventPersonaMap(), isEmpty);
+  });
 }

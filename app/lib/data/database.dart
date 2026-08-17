@@ -119,13 +119,30 @@ class HiddenEvents extends Table {
   Set<Column> get primaryKey => {eventId};
 }
 
-@DriftDatabase(tables: [Personas, EnergyReadings, Tasks, CalendarPrefs, HiddenEvents])
+/// Manual persona assignment for a calendar event (overrides auto-matching).
+@DataClassName('EventPersonaRow')
+class EventPersonaOverrides extends Table {
+  TextColumn get eventId => text()();
+  TextColumn get personaId => text()();
+
+  @override
+  Set<Column> get primaryKey => {eventId};
+}
+
+@DriftDatabase(tables: [
+  Personas,
+  EnergyReadings,
+  Tasks,
+  CalendarPrefs,
+  HiddenEvents,
+  EventPersonaOverrides,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,8 +153,29 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) await m.createTable(tasks);
           if (from < 4) await m.createTable(calendarPrefs);
           if (from < 5) await m.createTable(hiddenEvents);
+          if (from < 6) await m.createTable(eventPersonaOverrides);
         },
       );
+
+  /// Manual event→persona assignments, by event id.
+  Future<Map<String, String>> eventPersonaMap() async {
+    final rows = await select(eventPersonaOverrides).get();
+    return {for (final r in rows) r.eventId: r.personaId};
+  }
+
+  /// Assign (or clear, when [personaId] is null) a persona for an event.
+  Future<void> setEventPersona(String eventId, String? personaId) async {
+    if (personaId == null) {
+      await (delete(eventPersonaOverrides)
+            ..where((t) => t.eventId.equals(eventId)))
+          .go();
+    } else {
+      await into(eventPersonaOverrides).insertOnConflictUpdate(
+        EventPersonaOverridesCompanion.insert(
+            eventId: eventId, personaId: personaId),
+      );
+    }
+  }
 
   /// Ids of events the user has hidden from consideration.
   Future<Set<String>> hiddenEventIds() async {

@@ -2680,6 +2680,224 @@ class HiddenEventsCompanion extends UpdateCompanion<HiddenEventRow> {
   }
 }
 
+class $EventPersonaOverridesTable extends EventPersonaOverrides
+    with TableInfo<$EventPersonaOverridesTable, EventPersonaRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventPersonaOverridesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _personaIdMeta = const VerificationMeta(
+    'personaId',
+  );
+  @override
+  late final GeneratedColumn<String> personaId = GeneratedColumn<String>(
+    'persona_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [eventId, personaId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'event_persona_overrides';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventPersonaRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('persona_id')) {
+      context.handle(
+        _personaIdMeta,
+        personaId.isAcceptableOrUnknown(data['persona_id']!, _personaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personaIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  EventPersonaRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventPersonaRow(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+      personaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}persona_id'],
+      )!,
+    );
+  }
+
+  @override
+  $EventPersonaOverridesTable createAlias(String alias) {
+    return $EventPersonaOverridesTable(attachedDatabase, alias);
+  }
+}
+
+class EventPersonaRow extends DataClass implements Insertable<EventPersonaRow> {
+  final String eventId;
+  final String personaId;
+  const EventPersonaRow({required this.eventId, required this.personaId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['event_id'] = Variable<String>(eventId);
+    map['persona_id'] = Variable<String>(personaId);
+    return map;
+  }
+
+  EventPersonaOverridesCompanion toCompanion(bool nullToAbsent) {
+    return EventPersonaOverridesCompanion(
+      eventId: Value(eventId),
+      personaId: Value(personaId),
+    );
+  }
+
+  factory EventPersonaRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventPersonaRow(
+      eventId: serializer.fromJson<String>(json['eventId']),
+      personaId: serializer.fromJson<String>(json['personaId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'eventId': serializer.toJson<String>(eventId),
+      'personaId': serializer.toJson<String>(personaId),
+    };
+  }
+
+  EventPersonaRow copyWith({String? eventId, String? personaId}) =>
+      EventPersonaRow(
+        eventId: eventId ?? this.eventId,
+        personaId: personaId ?? this.personaId,
+      );
+  EventPersonaRow copyWithCompanion(EventPersonaOverridesCompanion data) {
+    return EventPersonaRow(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      personaId: data.personaId.present ? data.personaId.value : this.personaId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventPersonaRow(')
+          ..write('eventId: $eventId, ')
+          ..write('personaId: $personaId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(eventId, personaId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventPersonaRow &&
+          other.eventId == this.eventId &&
+          other.personaId == this.personaId);
+}
+
+class EventPersonaOverridesCompanion extends UpdateCompanion<EventPersonaRow> {
+  final Value<String> eventId;
+  final Value<String> personaId;
+  final Value<int> rowid;
+  const EventPersonaOverridesCompanion({
+    this.eventId = const Value.absent(),
+    this.personaId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventPersonaOverridesCompanion.insert({
+    required String eventId,
+    required String personaId,
+    this.rowid = const Value.absent(),
+  }) : eventId = Value(eventId),
+       personaId = Value(personaId);
+  static Insertable<EventPersonaRow> custom({
+    Expression<String>? eventId,
+    Expression<String>? personaId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (personaId != null) 'persona_id': personaId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventPersonaOverridesCompanion copyWith({
+    Value<String>? eventId,
+    Value<String>? personaId,
+    Value<int>? rowid,
+  }) {
+    return EventPersonaOverridesCompanion(
+      eventId: eventId ?? this.eventId,
+      personaId: personaId ?? this.personaId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (personaId.present) {
+      map['persona_id'] = Variable<String>(personaId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventPersonaOverridesCompanion(')
+          ..write('eventId: $eventId, ')
+          ..write('personaId: $personaId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2688,6 +2906,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TasksTable tasks = $TasksTable(this);
   late final $CalendarPrefsTable calendarPrefs = $CalendarPrefsTable(this);
   late final $HiddenEventsTable hiddenEvents = $HiddenEventsTable(this);
+  late final $EventPersonaOverridesTable eventPersonaOverrides =
+      $EventPersonaOverridesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2698,6 +2918,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tasks,
     calendarPrefs,
     hiddenEvents,
+    eventPersonaOverrides,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4479,6 +4700,168 @@ typedef $$HiddenEventsTableProcessedTableManager =
       HiddenEventRow,
       PrefetchHooks Function()
     >;
+typedef $$EventPersonaOverridesTableCreateCompanionBuilder =
+    EventPersonaOverridesCompanion Function({
+      required String eventId,
+      required String personaId,
+      Value<int> rowid,
+    });
+typedef $$EventPersonaOverridesTableUpdateCompanionBuilder =
+    EventPersonaOverridesCompanion Function({
+      Value<String> eventId,
+      Value<String> personaId,
+      Value<int> rowid,
+    });
+
+class $$EventPersonaOverridesTableFilterComposer
+    extends Composer<_$AppDatabase, $EventPersonaOverridesTable> {
+  $$EventPersonaOverridesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personaId => $composableBuilder(
+    column: $table.personaId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EventPersonaOverridesTableOrderingComposer
+    extends Composer<_$AppDatabase, $EventPersonaOverridesTable> {
+  $$EventPersonaOverridesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personaId => $composableBuilder(
+    column: $table.personaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EventPersonaOverridesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EventPersonaOverridesTable> {
+  $$EventPersonaOverridesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+
+  GeneratedColumn<String> get personaId =>
+      $composableBuilder(column: $table.personaId, builder: (column) => column);
+}
+
+class $$EventPersonaOverridesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EventPersonaOverridesTable,
+          EventPersonaRow,
+          $$EventPersonaOverridesTableFilterComposer,
+          $$EventPersonaOverridesTableOrderingComposer,
+          $$EventPersonaOverridesTableAnnotationComposer,
+          $$EventPersonaOverridesTableCreateCompanionBuilder,
+          $$EventPersonaOverridesTableUpdateCompanionBuilder,
+          (
+            EventPersonaRow,
+            BaseReferences<
+              _$AppDatabase,
+              $EventPersonaOverridesTable,
+              EventPersonaRow
+            >,
+          ),
+          EventPersonaRow,
+          PrefetchHooks Function()
+        > {
+  $$EventPersonaOverridesTableTableManager(
+    _$AppDatabase db,
+    $EventPersonaOverridesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventPersonaOverridesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$EventPersonaOverridesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$EventPersonaOverridesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> eventId = const Value.absent(),
+                Value<String> personaId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventPersonaOverridesCompanion(
+                eventId: eventId,
+                personaId: personaId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String eventId,
+                required String personaId,
+                Value<int> rowid = const Value.absent(),
+              }) => EventPersonaOverridesCompanion.insert(
+                eventId: eventId,
+                personaId: personaId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EventPersonaOverridesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EventPersonaOverridesTable,
+      EventPersonaRow,
+      $$EventPersonaOverridesTableFilterComposer,
+      $$EventPersonaOverridesTableOrderingComposer,
+      $$EventPersonaOverridesTableAnnotationComposer,
+      $$EventPersonaOverridesTableCreateCompanionBuilder,
+      $$EventPersonaOverridesTableUpdateCompanionBuilder,
+      (
+        EventPersonaRow,
+        BaseReferences<
+          _$AppDatabase,
+          $EventPersonaOverridesTable,
+          EventPersonaRow
+        >,
+      ),
+      EventPersonaRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4493,4 +4876,6 @@ class $AppDatabaseManager {
       $$CalendarPrefsTableTableManager(_db, _db.calendarPrefs);
   $$HiddenEventsTableTableManager get hiddenEvents =>
       $$HiddenEventsTableTableManager(_db, _db.hiddenEvents);
+  $$EventPersonaOverridesTableTableManager get eventPersonaOverrides =>
+      $$EventPersonaOverridesTableTableManager(_db, _db.eventPersonaOverrides);
 }

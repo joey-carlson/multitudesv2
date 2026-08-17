@@ -52,6 +52,7 @@ class HomeScreen extends StatelessWidget {
                   personas: personas,
                   db: db,
                   userId: userId,
+                  source: resolveCalendarSource(),
                 ),
               ),
             ),
@@ -95,8 +96,12 @@ class HomeScreen extends StatelessWidget {
 
   void _openBalance(BuildContext context) => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              BalanceScreen(personas: personas, db: db, userId: userId),
+          builder: (_) => BalanceScreen(
+            personas: personas,
+            db: db,
+            userId: userId,
+            source: resolveCalendarSource(),
+          ),
         ),
       );
 }

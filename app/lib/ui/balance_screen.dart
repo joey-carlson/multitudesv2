@@ -1,38 +1,88 @@
 import 'package:flutter/material.dart';
 
+import '../data/calendar_source.dart';
 import '../data/database.dart';
+import '../domain/calendar_classification.dart';
+import '../domain/calendar_matcher.dart';
 import '../domain/persona.dart';
 
 /// Persona feeding dashboard: which personas are fed, over-fed, or starving.
-/// "Actual" hours currently come from tasks completed in the last 7 days;
-/// calendar time will feed in once calendar integration (F1) lands.
-class BalanceScreen extends StatelessWidget {
+/// "Actual" hours combine tasks completed in the last 7 days with calendar time
+/// attributed to each persona (auto-matched or manually assigned) over the next
+/// 7 days — so assigning a persona to an event visibly feeds it.
+class BalanceScreen extends StatefulWidget {
   const BalanceScreen({
     super.key,
     required this.personas,
     required this.db,
     required this.userId,
+    required this.source,
   });
 
   final List<Persona> personas;
   final AppDatabase db;
   final String userId;
+  final CalendarSource source;
+
+  @override
+  State<BalanceScreen> createState() => _BalanceScreenState();
+}
+
+class _BalanceScreenState extends State<BalanceScreen> {
+  late Future<Map<String, double>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _computeActualHours();
+  }
+
+  /// Combined actual weekly hours per persona id: completed tasks + calendar.
+  Future<Map<String, double>> _computeActualHours() async {
+    final combined =
+        Map<String, double>.from(await widget.db.actualWeeklyHours(widget.userId));
+    try {
+      if (await widget.source.requestAccess()) {
+        final calendars = await widget.source.listCalendars();
+        final overrides = await widget.db.calendarKinds();
+        final kinds = {
+          for (final c in calendars) c.id: effectiveKind(c, overrides)
+        };
+        final hidden = await widget.db.hiddenEventIds();
+        final assignments = await widget.db.eventPersonaMap();
+        final now = DateTime.now();
+        final events = await widget.source
+            .eventsInRange(now, now.add(const Duration(days: 7)));
+        final calHours = calendarHoursByPersona(
+          events: events,
+          personas: widget.personas,
+          overrides: assignments,
+          hiddenEventIds: hidden,
+          kindByCalendarId: kinds,
+        );
+        calHours.forEach((pid, h) => combined[pid] = (combined[pid] ?? 0) + h);
+      }
+    } catch (_) {
+      // Calendar unavailable — fall back to task-only hours.
+    }
+    return combined;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Are your personas fed?')),
       body: FutureBuilder<Map<String, double>>(
-        future: db.actualWeeklyHours(userId),
+        future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
           final actualByPersona = snap.data ?? const {};
 
-          // Build + sort attention-first: starving, then over-fed, fed, none.
+          // Attention-first: starving, then over-fed, fed, none.
           final rows = [
-            for (final p in personas)
+            for (final p in widget.personas)
               (persona: p, actual: actualByPersona[p.id] ?? 0.0)
           ]..sort((a, b) => _priority(a.persona.fedState(a.actual))
               .compareTo(_priority(b.persona.fedState(b.actual))));
@@ -49,8 +99,8 @@ class BalanceScreen extends StatelessWidget {
               _SummaryCard(counts: counts),
               const SizedBox(height: 8),
               Text(
-                'Based on tasks completed in the last 7 days. '
-                'Calendar time will count too once calendar sync is added.',
+                'Combines tasks completed in the last 7 days with calendar time '
+                'assigned to each persona over the next 7 days.',
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
               const SizedBox(height: 8),

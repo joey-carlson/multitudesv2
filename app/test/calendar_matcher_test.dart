@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:multitudes/domain/calendar_classification.dart';
 import 'package:multitudes/domain/calendar_event.dart';
 import 'package:multitudes/domain/calendar_matcher.dart';
 import 'package:multitudes/domain/persona.dart';
@@ -59,5 +60,67 @@ void main() {
       personas,
     ).first;
     expect(offPeak.wellTimed, isFalse);
+  });
+
+  // Personas with ids (as loaded from the DB) for override/attribution tests.
+  Persona pid(String id, PersonaArchetype a, List<String> tasks) => Persona(
+        id: id,
+        userId: 'u',
+        name: id,
+        emoji: '🧩',
+        archetype: a,
+        primaryEnergy: '',
+        strengths: const [],
+        weaknesses: const [],
+        triggerConditions: const [],
+        idealTasks: tasks,
+      );
+  final withIds = [
+    pid('pa', PersonaArchetype.professional, ['Financial decisions']),
+    pid('pb', PersonaArchetype.artist, ['Creative writing']),
+  ];
+
+  group('effectivePersonaForEvent', () {
+    test('manual override wins over auto-match', () {
+      final e = _event('Creative writing'); // auto-matches pb
+      expect(effectivePersonaForEvent(e, withIds, const {})!.id, 'pb');
+      expect(effectivePersonaForEvent(e, withIds, {e.id: 'pa'})!.id, 'pa');
+    });
+
+    test('no match and no override -> null', () {
+      expect(effectivePersonaForEvent(_event('Dentist'), withIds, const {}),
+          isNull);
+    });
+  });
+
+  test('calendarHoursByPersona attributes via effective persona, skipping '
+      'hidden and ignored', () {
+    CalendarEvent ev(String id, String title, int calDayHour,
+            {String? calId}) =>
+        CalendarEvent(
+          id: id,
+          title: title,
+          start: DateTime(2026, 1, 1, calDayHour),
+          end: DateTime(2026, 1, 1, calDayHour + 1), // 1 hour each
+          calendarId: calId,
+        );
+
+    final events = [
+      ev('e1', 'Financial report', 8, calId: 'cal-work'), // auto -> pa
+      ev('e2', 'Mystery block', 10, calId: 'cal-work'), // override -> pb
+      ev('e3', 'Financial report', 12, calId: 'cal-work'), // hidden
+      ev('e4', 'Financial report', 14, calId: 'cal-ignore'), // ignored cal
+    ];
+
+    final hours = calendarHoursByPersona(
+      events: events,
+      personas: withIds,
+      overrides: {'e2': 'pb'},
+      hiddenEventIds: {'e3'},
+      kindByCalendarId: {'cal-ignore': CalendarKind.ignore},
+    );
+
+    expect(hours['pa'], closeTo(1.0, 1e-9)); // only e1
+    expect(hours['pb'], closeTo(1.0, 1e-9)); // only e2
   });
 }

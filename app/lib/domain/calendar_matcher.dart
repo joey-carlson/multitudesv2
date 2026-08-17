@@ -6,6 +6,7 @@
 /// state at the event's start time so the UI can flag good/poor timing.
 library;
 
+import 'calendar_classification.dart';
 import 'calendar_event.dart';
 import 'persona.dart';
 
@@ -78,4 +79,47 @@ List<PersonaMatch> rankPersonasForEvent(
     return byScore != 0 ? byScore : a.persona.name.compareTo(b.persona.name);
   });
   return matches;
+}
+
+/// The persona in effect for an event: a manual assignment ([overrides] maps
+/// event id → persona id) wins; otherwise the top auto-match; else null.
+Persona? effectivePersonaForEvent(
+  CalendarEvent event,
+  List<Persona> personas,
+  Map<String, String> overrides,
+) {
+  final overrideId = overrides[event.id];
+  if (overrideId != null) {
+    for (final p in personas) {
+      if (p.id == overrideId) return p;
+    }
+  }
+  final matches = rankPersonasForEvent(event, personas);
+  return matches.isEmpty ? null : matches.first.persona;
+}
+
+/// Hours per persona id attributed from [events] via their effective persona,
+/// skipping hidden events and events on ignored calendars. Used to fold
+/// calendar time into the persona balance.
+Map<String, double> calendarHoursByPersona({
+  required List<CalendarEvent> events,
+  required List<Persona> personas,
+  required Map<String, String> overrides,
+  required Set<String> hiddenEventIds,
+  required Map<String, CalendarKind> kindByCalendarId,
+}) {
+  final hours = <String, double>{};
+  for (final e in events) {
+    if (hiddenEventIds.contains(e.id)) continue;
+    final kind = e.calendarId == null
+        ? CalendarKind.unset
+        : (kindByCalendarId[e.calendarId] ?? CalendarKind.unset);
+    if (kind == CalendarKind.ignore) continue;
+
+    final persona = effectivePersonaForEvent(e, personas, overrides);
+    final pid = persona?.id;
+    if (pid == null) continue;
+    hours[pid] = (hours[pid] ?? 0) + e.duration.inMinutes / 60.0;
+  }
+  return hours;
 }

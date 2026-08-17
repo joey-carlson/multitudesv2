@@ -35,6 +35,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<CalendarEvent> _events = const [];
   Map<String, CalendarKind> _kinds = const {};
   final Set<String> _hidden = {};
+  final Map<String, String> _overrides = {}; // eventId -> personaId
 
   @override
   void initState() {
@@ -56,11 +57,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     final calendars = await widget.source.listCalendars();
-    final overrides = await widget.db.calendarKinds();
+    final kindOverrides = await widget.db.calendarKinds();
     final kinds = {
-      for (final c in calendars) c.id: effectiveKind(c, overrides)
+      for (final c in calendars) c.id: effectiveKind(c, kindOverrides)
     };
     final hidden = await widget.db.hiddenEventIds();
+    final personaOverrides = await widget.db.eventPersonaMap();
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
@@ -73,6 +75,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _hidden
         ..clear()
         ..addAll(hidden);
+      _overrides
+        ..clear()
+        ..addAll(personaOverrides);
       _loading = false;
     });
   }
@@ -81,6 +86,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _setHidden(CalendarEvent e, bool hidden) async {
     setState(() => hidden ? _hidden.add(e.id) : _hidden.remove(e.id));
     await widget.db.setEventHidden(e.id, hidden);
+  }
+
+  Future<void> _setPersona(CalendarEvent e, String? personaId) async {
+    setState(() {
+      if (personaId == null) {
+        _overrides.remove(e.id);
+      } else {
+        _overrides[e.id] = personaId;
+      }
+    });
+    await widget.db.setEventPersona(e.id, personaId);
+  }
+
+  void _openAssign(CalendarEvent e) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Assign a persona to "${e.title}"',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            for (final p in widget.personas)
+              if (p.id != null)
+                ListTile(
+                  leading: Text(p.emoji, style: const TextStyle(fontSize: 22)),
+                  title: Text(p.name),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _setPersona(e, p.id);
+                  },
+                ),
+            if (_overrides.containsKey(e.id))
+              ListTile(
+                leading: const Icon(Icons.clear),
+                title: const Text('Clear assignment'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _setPersona(e, null);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openSettings() async {
@@ -161,8 +214,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         event: e,
                         kind: kindOf(e),
                         hidden: _hidden.contains(e.id),
+                        persona: effectivePersonaForEvent(
+                            e, widget.personas, _overrides),
+                        isManual: _overrides.containsKey(e.id),
                         onToggleHidden: (h) => _setHidden(e, h),
-                        matches: rankPersonasForEvent(e, widget.personas),
+                        onAssign: () => _openAssign(e),
                       ),
                   ],
                 ),
@@ -206,19 +262,22 @@ class _EventCard extends StatelessWidget {
     required this.event,
     required this.kind,
     required this.hidden,
+    required this.persona,
+    required this.isManual,
     required this.onToggleHidden,
-    required this.matches,
+    required this.onAssign,
   });
 
   final CalendarEvent event;
   final CalendarKind kind;
   final bool hidden;
+  final Persona? persona;
+  final bool isManual;
   final ValueChanged<bool> onToggleHidden;
-  final List<PersonaMatch> matches;
+  final VoidCallback onAssign;
 
   @override
   Widget build(BuildContext context) {
-    final top = matches.isNotEmpty ? matches.first : null;
     final card = Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 4, 12),
@@ -234,13 +293,28 @@ class _EventCard extends StatelessWidget {
                 ),
                 if (kind == CalendarKind.work || kind == CalendarKind.personal)
                   _KindChip(kind: kind),
-                PopupMenuButton<bool>(
+                PopupMenuButton<String>(
                   tooltip: 'Event options',
                   icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: onToggleHidden,
+                  onSelected: (v) {
+                    switch (v) {
+                      case 'assign':
+                        onAssign();
+                      case 'hide':
+                        onToggleHidden(true);
+                      case 'unhide':
+                        onToggleHidden(false);
+                    }
+                  },
                   itemBuilder: (context) => [
                     PopupMenuItem(
-                      value: !hidden,
+                      value: 'assign',
+                      child: Text(persona == null
+                          ? 'Assign persona…'
+                          : 'Change persona…'),
+                    ),
+                    PopupMenuItem(
+                      value: hidden ? 'unhide' : 'hide',
                       child: Text(hidden
                           ? 'Unhide — consider in Multitudes'
                           : 'Hide from Multitudes'),
@@ -260,11 +334,20 @@ class _EventCard extends StatelessWidget {
                     const Text('Hidden — not considered',
                         style: TextStyle(
                             color: Colors.grey, fontStyle: FontStyle.italic))
-                  else if (top == null)
-                    const Text('No persona matched',
-                        style: TextStyle(color: Colors.grey))
+                  else if (persona == null)
+                    Row(
+                      children: [
+                        const Text('No persona matched',
+                            style: TextStyle(color: Colors.grey)),
+                        const Spacer(),
+                        TextButton(
+                            onPressed: onAssign,
+                            child: const Text('Assign')),
+                      ],
+                    )
                   else
-                    _MatchLine(match: top),
+                    _PersonaLine(
+                        persona: persona!, event: event, isManual: isManual),
                 ],
               ),
             ),
@@ -305,14 +388,22 @@ class _KindChip extends StatelessWidget {
   }
 }
 
-class _MatchLine extends StatelessWidget {
-  const _MatchLine({required this.match});
+/// The persona in effect for an event, with a timing note and (for manual
+/// assignments) an "assigned" tag.
+class _PersonaLine extends StatelessWidget {
+  const _PersonaLine({
+    required this.persona,
+    required this.event,
+    required this.isManual,
+  });
 
-  final PersonaMatch match;
+  final Persona persona;
+  final CalendarEvent event;
+  final bool isManual;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, note, color) = switch (match.stateAtEvent) {
+    final (icon, note, color) = switch (persona.energyStateAt(event.start)) {
       EnergyState.peak => ('✅', 'during their peak', Colors.green),
       EnergyState.trough => ('⚠️', 'during their low-energy trough', Colors.orange),
       EnergyState.recovery => ('🔋', 'during their recovery window', Colors.blue),
@@ -322,7 +413,8 @@ class _MatchLine extends StatelessWidget {
       children: [
         Chip(
           visualDensity: VisualDensity.compact,
-          label: Text('${match.persona.emoji} ${match.persona.name}'),
+          avatar: isManual ? const Icon(Icons.push_pin, size: 14) : null,
+          label: Text('${persona.emoji} ${persona.name}'),
         ),
         const SizedBox(width: 8),
         Expanded(
