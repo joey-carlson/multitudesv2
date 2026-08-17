@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Local-first architecture**: collapsed the three-service datastore
+  (PostgreSQL + InfluxDB + Redis) to a single self-contained **SQLite** file.
+  The app now runs on any laptop with zero services and is portable to
+  on-device use; PostgreSQL remains an optional backend for a self-hosted sync
+  server. Models are dialect-neutral (`JSON` instead of `JSONB`/`ARRAY`), the
+  storage layer defaults to `sqlite+aiosqlite` with a portable upsert, and the
+  Alembic migrations are squashed into one portable initial migration.
+  InfluxDB/Redis/Celery dependencies removed (they were unused in code).
+
 ### Fixed
 - Onboarding energy-pattern mapping: `PersonaGenerator._extract_energy_config`
   matched stale option strings (e.g. "5am-9am", "6pm-10pm") that no longer
