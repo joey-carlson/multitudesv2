@@ -64,6 +64,39 @@ enrichment.
 - **Data controls:** export / delete-all; a single master toggle for any online
   feature (ties to REQUIREMENTS §8.5).
 
+### Deferred: persona-matching improvements (F1/F2 dependency)
+
+The initial event→persona matcher is keyword-overlap only and matched **nothing**
+on a real personal calendar (event titles rarely contain persona keywords).
+Improve matching before building F2, so suggestions are worth acting on. Ideas:
+- Expand persona keyword sets with synonyms/related terms; weight by field.
+- Use more event signals: attendees, location, calendar (work vs. personal),
+  all-day vs. timed, recurrence, time-of-day.
+- Manual event→persona tagging, and learn from corrections (ties to F5).
+- Optional semantic/LLM classification (online-enrichment layer, Decision C).
+- Work/personal calendar context (below) as a strong prior.
+
+**F2 (timing suggestions) is DEFERRED** until matching is good enough — building
+suggestions atop weak matches would mean rework.
+
+### Outlook / external calendars
+
+- **Local-first path (preferred):** add the Outlook/Exchange/O365 account to the
+  OS Calendar (macOS System Settings → Internet Accounts). EventKit then exposes
+  it through the existing calendar source — no new code, stays on-device.
+- **Direct Microsoft Graph path (optional, online):** OAuth2 + `Calendars.Read`
+  via MS Graph for accounts not in the OS calendar. Heavier: Azure app
+  registration, browser OAuth, token storage, network; crosses the
+  online-enrichment boundary (Decision C). Only if the OS-calendar route is
+  insufficient.
+
+### Work vs. personal calendar classification
+
+Surface all calendars with their account/source, let the user tag each as
+Work / Personal / Ignore (with sensible inference), persist locally, and use the
+tag to filter events and (later) apply work-hours vs. personal-hours context to
+matching and timing.
+
 ### Cross-cutting decisions (need resolution before building)
 
 - **A. Calendar integration is on-device (EventKit).** Read-only to start; adds
