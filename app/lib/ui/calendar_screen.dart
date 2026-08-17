@@ -27,21 +27,32 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  late Future<_CalendarData> _future;
   CalendarKind? _filter; // null = all (work + personal + unset)
   bool _showHidden = false;
+
+  bool _loading = true;
+  bool _granted = true;
+  List<CalendarEvent> _events = const [];
+  Map<String, CalendarKind> _kinds = const {};
+  final Set<String> _hidden = {};
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _load();
   }
 
-  Future<_CalendarData> _load() async {
+  Future<void> _load() async {
+    setState(() => _loading = true);
     final granted = await widget.source.requestAccess();
     if (!granted) {
-      return _CalendarData(
-          granted: false, events: const [], kinds: const {}, hidden: const {});
+      if (mounted) {
+        setState(() {
+          _granted = false;
+          _loading = false;
+        });
+      }
+      return;
     }
 
     final calendars = await widget.source.listCalendars();
@@ -50,24 +61,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
       for (final c in calendars) c.id: effectiveKind(c, overrides)
     };
     final hidden = await widget.db.hiddenEventIds();
-
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
-    return _CalendarData(
-        granted: true, events: events, kinds: kinds, hidden: hidden);
+
+    if (!mounted) return;
+    setState(() {
+      _granted = true;
+      _events = events;
+      _kinds = kinds;
+      _hidden
+        ..clear()
+        ..addAll(hidden);
+      _loading = false;
+    });
   }
 
+  // Optimistic: update the visible list immediately, then persist.
   Future<void> _setHidden(CalendarEvent e, bool hidden) async {
+    setState(() => hidden ? _hidden.add(e.id) : _hidden.remove(e.id));
     await widget.db.setEventHidden(e.id, hidden);
-    if (mounted) setState(() => _future = _load());
   }
 
   Future<void> _openSettings() async {
     await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => CalendarsSettingsScreen(source: widget.source, db: widget.db),
+      builder: (_) =>
+          CalendarsSettingsScreen(source: widget.source, db: widget.db),
     ));
-    setState(() => _future = _load());
+    _load();
   }
 
   @override
@@ -88,85 +109,67 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<_CalendarData>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final data = snap.data!;
-          if (!data.granted) {
-            return const _Message(
-                '🔒 Calendar access was denied.\nEnable it in system settings to see your events.');
-          }
-
-          CalendarKind kindOf(CalendarEvent e) => e.calendarId == null
-              ? CalendarKind.unset
-              : (data.kinds[e.calendarId] ?? CalendarKind.unset);
-
-          // Hide ignored calendars, apply the work/personal filter, and drop
-          // hidden events unless the user is reviewing them.
-          final visible = data.events.where((e) {
-            final k = kindOf(e);
-            if (k == CalendarKind.ignore) return false;
-            if (!_showHidden && data.hidden.contains(e.id)) return false;
-            if (_filter == null) return true;
-            return k == _filter;
-          }).toList();
-
-          return Column(
-            children: [
-              _FilterBar(
-                filter: _filter,
-                onChanged: (f) => setState(() => _filter = f),
-              ),
-              Expanded(
-                child: visible.isEmpty
-                    ? const _Message('No matching events in the next 7 days.')
-                    : ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          if (!widget.source.isLive)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(
-                                'Showing ${widget.source.label.toLowerCase()} — '
-                                'connect your device calendar to see real events.',
-                                style: TextStyle(
-                                    color: Colors.grey[600], fontSize: 13),
-                              ),
-                            ),
-                          for (final e in visible)
-                            _EventCard(
-                              event: e,
-                              kind: kindOf(e),
-                              hidden: data.hidden.contains(e.id),
-                              onToggleHidden: (h) => _setHidden(e, h),
-                              matches:
-                                  rankPersonasForEvent(e, widget.personas),
-                            ),
-                        ],
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
+      body: _buildBody(),
     );
   }
-}
 
-class _CalendarData {
-  _CalendarData({
-    required this.granted,
-    required this.events,
-    required this.kinds,
-    required this.hidden,
-  });
-  final bool granted;
-  final List<CalendarEvent> events;
-  final Map<String, CalendarKind> kinds;
-  final Set<String> hidden;
+  Widget _buildBody() {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (!_granted) {
+      return const _Message(
+          '🔒 Calendar access was denied.\nEnable it in system settings to see your events.');
+    }
+
+    CalendarKind kindOf(CalendarEvent e) => e.calendarId == null
+        ? CalendarKind.unset
+        : (_kinds[e.calendarId] ?? CalendarKind.unset);
+
+    // Hide ignored calendars, apply the work/personal filter, and drop hidden
+    // events unless the user is reviewing them.
+    final visible = _events.where((e) {
+      final k = kindOf(e);
+      if (k == CalendarKind.ignore) return false;
+      if (!_showHidden && _hidden.contains(e.id)) return false;
+      if (_filter == null) return true;
+      return k == _filter;
+    }).toList();
+
+    return Column(
+      children: [
+        _FilterBar(
+          filter: _filter,
+          onChanged: (f) => setState(() => _filter = f),
+        ),
+        Expanded(
+          child: visible.isEmpty
+              ? const _Message('No matching events in the next 7 days.')
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (!widget.source.isLive)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Showing ${widget.source.label.toLowerCase()} — '
+                          'connect your device calendar to see real events.',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 13),
+                        ),
+                      ),
+                    for (final e in visible)
+                      _EventCard(
+                        event: e,
+                        kind: kindOf(e),
+                        hidden: _hidden.contains(e.id),
+                        onToggleHidden: (h) => _setHidden(e, h),
+                        matches: rankPersonasForEvent(e, widget.personas),
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
 }
 
 class _FilterBar extends StatelessWidget {
