@@ -1,7 +1,9 @@
 """
 SQLAlchemy Database Models for Multitudes.
 
-These models define the PostgreSQL schema for user context persistence.
+These models define a dialect-neutral schema that runs on both SQLite
+(local-first, on-device) and PostgreSQL (optional self-hosted sync server).
+JSON columns store both objects and string lists portably.
 """
 
 import uuid
@@ -19,8 +21,8 @@ from sqlalchemy import (
     Index,
     CheckConstraint,
     Boolean,
+    JSON,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -67,7 +69,7 @@ class UserContextDB(Base):
     user_id = Column(String(32), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     context_type = Column(String(50), nullable=False)  # 'preference', 'pattern', 'stat', 'persona_affinity'
     key = Column(String(100), nullable=False)
-    value = Column(JSONB, nullable=False)
+    value = Column(JSON, nullable=False)
     confidence = Column(Float, default=1.0, nullable=False)
     weight = Column(Float, default=1.0, nullable=False)  # Time-decay weight
     learned_from = Column(String(100), nullable=False)  # 'explicit', 'feedback', 'pattern'
@@ -105,9 +107,9 @@ class UserFeedbackDB(Base):
     id = Column(String(32), primary_key=True, default=generate_uuid)
     user_id = Column(String(32), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     interaction_type = Column(String(50), nullable=False)  # 'task_suggestion', 'persona_detection', etc.
-    interaction_data = Column(JSONB, nullable=False)
+    interaction_data = Column(JSON, nullable=False)
     feedback_type = Column(String(50), nullable=False)  # 'accepted', 'rejected', 'modified'
-    feedback_data = Column(JSONB, nullable=False)
+    feedback_data = Column(JSON, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships
@@ -143,10 +145,10 @@ class Persona(Base):
     
     # Core characteristics (from Multitudes v1 template)
     primary_energy = Column(Text, nullable=True)  # Core behavioral traits
-    strengths = Column(ARRAY(String), nullable=True)
-    weaknesses = Column(ARRAY(String), nullable=True)
-    trigger_conditions = Column(ARRAY(String), nullable=True)
-    ideal_tasks = Column(ARRAY(String), nullable=True)
+    strengths = Column(JSON, nullable=True)
+    weaknesses = Column(JSON, nullable=True)
+    trigger_conditions = Column(JSON, nullable=True)
+    ideal_tasks = Column(JSON, nullable=True)
     
     # Energy patterns (Peak-Trough-Recovery model) - stored as "HH:MM" strings
     peak_start_time = Column(String(5), nullable=True)  # e.g., "09:00"
@@ -185,9 +187,8 @@ class EnergyReading(Base):
     """
     Time-series energy readings for personas.
     
-    Tracks actual energy levels over time to refine predictions.
-    For high-volume time-series data, this could be moved to InfluxDB,
-    but starting in PostgreSQL for simplicity.
+    Tracks actual energy levels over time to refine predictions. Stored in the
+    same SQL database as everything else; volume is low for a single user.
     """
     
     __tablename__ = "energy_readings"
@@ -202,7 +203,7 @@ class EnergyReading(Base):
     
     # Source tracking
     source = Column(String(50), default="manual", nullable=False)  # manual, inferred, scheduled, feedback
-    context = Column(JSONB, nullable=True)  # Additional context
+    context = Column(JSON, nullable=True)  # Additional context
     notes = Column(Text, nullable=True)
     
     # Relationships
@@ -237,7 +238,7 @@ class Task(Base):
     completed = Column(Boolean, default=False, nullable=False)
     completed_at = Column(DateTime, nullable=True)
     source = Column(String(50), nullable=True)  # 'email', 'calendar', 'manual'
-    source_metadata = Column(JSONB, nullable=True)
+    source_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships

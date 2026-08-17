@@ -186,9 +186,9 @@ class Persona:
 class EnergyReading:
     """
     Time-series energy data point for a persona.
-    
-    Stored in InfluxDB for efficient time-series queries and analysis.
-    Used to track actual energy levels over time and refine predictions.
+
+    Persisted in the app's SQL database (SQLite by default) and used to track
+    actual energy levels over time and refine predictions.
     """
     # Identity
     id: str = field(default_factory=lambda: str(uuid4()).replace("-", ""))

@@ -1,7 +1,9 @@
 """
-PostgreSQL Storage Backend for User Context.
+SQL Storage Backend for User Context.
 
-Implements the storage interface for Context Manager with PostgreSQL.
+Implements the storage interface for Context Manager over any SQLAlchemy
+dialect. Defaults to a local SQLite file (local-first, self-contained) and
+also supports PostgreSQL for an optional self-hosted sync server.
 """
 
 import os
@@ -11,7 +13,6 @@ from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select, update, delete, and_, or_
-from sqlalchemy.dialects.postgresql import insert
 
 from .models import Base, User, UserContextDB, UserFeedbackDB, Persona, Task
 from ...core.models.user_context import (
@@ -22,37 +23,46 @@ from ...core.models.user_context import (
 )
 
 
-class PostgresContextStorage:
+class SqlContextStorage:
     """
-    PostgreSQL storage backend for user context persistence.
-    
-    Handles all database operations for user contexts, feedback, and related data.
+    SQL storage backend for user context persistence.
+
+    Defaults to a local SQLite file (self-contained, no services). Also works
+    against PostgreSQL for an optional sync server. Handles all database
+    operations for user contexts, feedback, and related data.
     """
-    
+
     def __init__(self, database_url: Optional[str] = None):
         """
-        Initialize PostgreSQL storage.
-        
+        Initialize SQL storage.
+
         Args:
-            database_url: PostgreSQL connection URL. If None, reads from DATABASE_URL env var.
+            database_url: SQLAlchemy connection URL. If None, reads from the
+                DATABASE_URL env var, falling back to a local SQLite file.
         """
         if database_url is None:
             database_url = os.getenv(
                 "DATABASE_URL",
-                "postgresql+asyncpg://multitudes:multitudes_dev_password@localhost:5432/multitudes_db"
+                "sqlite+aiosqlite:///./multitudes.db"
             )
-        
-        # Convert to async if needed
+
+        # Normalize sync driver URLs to their async equivalents
         if database_url.startswith("postgresql://"):
             database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        
-        self.engine = create_async_engine(
-            database_url,
-            echo=False,  # Set to True for SQL query debugging
-            pool_size=10,
-            max_overflow=20,
-        )
-        
+        elif database_url.startswith("sqlite://") and "+aiosqlite" not in database_url:
+            database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+
+        # SQLite doesn't use a server-style connection pool; QueuePool sizing
+        # args are invalid there, so only pass them for networked databases.
+        engine_kwargs: Dict[str, Any] = {"echo": False}
+        if database_url.startswith("sqlite"):
+            engine_kwargs["connect_args"] = {"check_same_thread": False}
+        else:
+            engine_kwargs["pool_size"] = 10
+            engine_kwargs["max_overflow"] = 20
+
+        self.engine = create_async_engine(database_url, **engine_kwargs)
+
         self.async_session_maker = async_sessionmaker(
             self.engine,
             class_=AsyncSession,
@@ -140,35 +150,40 @@ class PostgresContextStorage:
         Args:
             context_item: Context item to save
         """
+        now = datetime.utcnow()
         async with self.get_session() as session:
-            # Prepare data
-            data = {
-                "user_id": context_item.user_id,
-                "context_type": context_item.context_type.value,
-                "key": context_item.key,
-                "value": context_item.value,
-                "confidence": context_item.confidence,
-                "weight": context_item.weight,
-                "learned_from": context_item.learned_from.value,
-                "created_at": context_item.created_at,
-                "updated_at": datetime.utcnow(),
-                "last_accessed": datetime.utcnow(),
-            }
-            
-            # Use PostgreSQL INSERT ... ON CONFLICT (upsert)
-            stmt = insert(UserContextDB).values(**data)
-            stmt = stmt.on_conflict_do_update(
-                index_elements=["user_id", "context_type", "key"],
-                set_={
-                    "value": stmt.excluded.value,
-                    "confidence": stmt.excluded.confidence,
-                    "weight": stmt.excluded.weight,
-                    "updated_at": stmt.excluded.updated_at,
-                    "last_accessed": stmt.excluded.last_accessed,
-                }
+            # Dialect-neutral upsert: update the existing row for this
+            # (user_id, context_type, key) if present, otherwise insert.
+            existing = await session.execute(
+                select(UserContextDB).where(
+                    and_(
+                        UserContextDB.user_id == context_item.user_id,
+                        UserContextDB.context_type == context_item.context_type.value,
+                        UserContextDB.key == context_item.key,
+                    )
+                )
             )
-            
-            await session.execute(stmt)
+            row = existing.scalar_one_or_none()
+
+            if row is not None:
+                row.value = context_item.value
+                row.confidence = context_item.confidence
+                row.weight = context_item.weight
+                row.updated_at = now
+                row.last_accessed = now
+            else:
+                session.add(UserContextDB(
+                    user_id=context_item.user_id,
+                    context_type=context_item.context_type.value,
+                    key=context_item.key,
+                    value=context_item.value,
+                    confidence=context_item.confidence,
+                    weight=context_item.weight,
+                    learned_from=context_item.learned_from.value,
+                    created_at=context_item.created_at,
+                    updated_at=now,
+                    last_accessed=now,
+                ))
     
     async def update_confidence(self, context_id: str, new_confidence: float) -> None:
         """
@@ -336,15 +351,20 @@ class PostgresContextStorage:
         await self.engine.dispose()
 
 
+# Backwards-compatible alias: the class was PostgreSQL-only before the move to
+# a dialect-neutral, SQLite-first backend. Existing imports keep working.
+PostgresContextStorage = SqlContextStorage
+
+
 # Global storage instance for FastAPI dependency injection
-_storage_instance: Optional[PostgresContextStorage] = None
+_storage_instance: Optional[SqlContextStorage] = None
 
 
-def get_storage() -> PostgresContextStorage:
+def get_storage() -> SqlContextStorage:
     """Get global storage instance"""
     global _storage_instance
     if _storage_instance is None:
-        _storage_instance = PostgresContextStorage()
+        _storage_instance = SqlContextStorage()
     return _storage_instance
 
 

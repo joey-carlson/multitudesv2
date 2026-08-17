@@ -17,12 +17,19 @@ from src.shared.database.models import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Override sqlalchemy.url with environment variable if present
+# Override sqlalchemy.url with environment variable if present. Defaults to a
+# local SQLite file (self-contained). Alembic uses a synchronous engine, so
+# strip async driver suffixes from the app's URL.
 db_url = os.getenv(
     "DATABASE_URL",
-    "postgresql://multitudes:multitudes_dev_password@localhost:5432/multitudes_db"
+    "sqlite:///./multitudes.db"
 )
+db_url = db_url.replace("+aiosqlite", "").replace("+asyncpg", "")
 config.set_main_option("sqlalchemy.url", db_url)
+
+# SQLite has limited ALTER TABLE support; batch mode rebuilds tables so
+# future column changes work the same as on PostgreSQL.
+IS_SQLITE = db_url.startswith("sqlite")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -57,6 +64,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        render_as_batch=IS_SQLITE,
     )
 
     with context.begin_transaction():
@@ -78,7 +86,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=IS_SQLITE,
         )
 
         with context.begin_transaction():
