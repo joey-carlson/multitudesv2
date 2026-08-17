@@ -10,8 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Flutter app scaffold (`app/`)** — local-first client (Phase 2). Dart port of
   the persona domain (archetypes, templates, generator), on-device SQLite via
-  Drift, an onboarding survey screen and a home screen. Verified end-to-end with
-  `flutter analyze` clean and 16 tests passing.
+  Drift, an onboarding survey screen and a home screen. Runs on macOS.
+- **Persona detail + "who's active now"** — home cards show a live energy-state
+  badge (peak/recovery/trough/steady) from the ported energy model; tapping a
+  persona opens a detail view (energy rhythm, strengths, growth areas, triggers,
+  ideal tasks).
+- **Energy check-ins** — `energy_readings` table (Drift schema v2 + migration);
+  log a persona's current energy (1–10) and view recent check-ins, stored
+  locally. Verified: `flutter analyze` clean, 22 Flutter tests passing.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
   `tests/fixtures/persona_generation_cases.json` from the Python generator (the
   executable spec); both the Python and Dart suites assert against the same
