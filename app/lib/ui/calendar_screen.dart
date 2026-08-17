@@ -151,6 +151,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         title: const Text('Calendar'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _load,
+          ),
+          IconButton(
             icon: Icon(_showHidden ? Icons.visibility : Icons.visibility_off),
             tooltip: _showHidden ? 'Hide hidden events' : 'Show hidden events',
             onPressed: () => setState(() => _showHidden = !_showHidden),
@@ -177,15 +182,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ? CalendarKind.unset
         : (_kinds[e.calendarId] ?? CalendarKind.unset);
 
+    Persona? personaOf(CalendarEvent e) =>
+        effectivePersonaForEvent(e, widget.personas, _overrides);
+
     // Hide ignored calendars, apply the work/personal filter, and drop hidden
-    // events unless the user is reviewing them.
+    // events unless the user is reviewing them. Sorted by start time.
     final visible = _events.where((e) {
       final k = kindOf(e);
       if (k == CalendarKind.ignore) return false;
       if (!_showHidden && _hidden.contains(e.id)) return false;
       if (_filter == null) return true;
       return k == _filter;
-    }).toList();
+    }).toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+
+    // Summary counts over the visible set.
+    final assigned = visible.where((e) => _overrides.containsKey(e.id)).length;
+    final unmatched =
+        visible.where((e) => !_hidden.contains(e.id) && personaOf(e) == null).length;
+    final hiddenCount = _events.where((e) => _hidden.contains(e.id)).length;
 
     return Column(
       children: [
@@ -193,38 +208,108 @@ class _CalendarScreenState extends State<CalendarScreen> {
           filter: _filter,
           onChanged: (f) => setState(() => _filter = f),
         ),
+        if (visible.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                [
+                  '${visible.length} event${visible.length == 1 ? '' : 's'}',
+                  if (assigned > 0) '$assigned assigned',
+                  if (unmatched > 0) '$unmatched unmatched',
+                  if (hiddenCount > 0) '$hiddenCount hidden',
+                ].join(' · '),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
+          ),
         Expanded(
           child: visible.isEmpty
               ? const _Message('No matching events in the next 7 days.')
               : ListView(
                   padding: const EdgeInsets.all(16),
-                  children: [
-                    if (!widget.source.isLive)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'Showing ${widget.source.label.toLowerCase()} — '
-                          'connect your device calendar to see real events.',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 13),
-                        ),
-                      ),
-                    for (final e in visible)
-                      _EventCard(
-                        event: e,
-                        kind: kindOf(e),
-                        hidden: _hidden.contains(e.id),
-                        persona: effectivePersonaForEvent(
-                            e, widget.personas, _overrides),
-                        isManual: _overrides.containsKey(e.id),
-                        onToggleHidden: (h) => _setHidden(e, h),
-                        onAssign: () => _openAssign(e),
-                      ),
-                  ],
+                  children: _eventList(visible, kindOf, personaOf, unmatched),
                 ),
         ),
       ],
     );
+  }
+
+  /// Builds the scrollable list: source note, empty-match guidance, then events
+  /// grouped under day headers (Today / Tomorrow / weekday).
+  List<Widget> _eventList(
+    List<CalendarEvent> visible,
+    CalendarKind Function(CalendarEvent) kindOf,
+    Persona? Function(CalendarEvent) personaOf,
+    int unmatched,
+  ) {
+    final children = <Widget>[];
+
+    if (!widget.source.isLive) {
+      children.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          'Showing ${widget.source.label.toLowerCase()} — '
+          'connect your device calendar to see real events.',
+          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+        ),
+      ));
+    }
+
+    // Guidance when nothing matched any persona.
+    if (unmatched == visible.length && !_showHidden) {
+      children.add(Card(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        child: const Padding(
+          padding: EdgeInsets.all(12),
+          child: Text(
+            "None of these events matched a persona yet. Use an event's menu to "
+            'assign one — assignments feed that persona in your balance.',
+          ),
+        ),
+      ));
+    }
+
+    String? currentDay;
+    for (final e in visible) {
+      final label = _dayLabel(e.start);
+      if (label != currentDay) {
+        currentDay = label;
+        children.add(Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 4),
+          child: Text(label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.3)),
+        ));
+      }
+      children.add(_EventCard(
+        event: e,
+        kind: kindOf(e),
+        hidden: _hidden.contains(e.id),
+        persona: personaOf(e),
+        isManual: _overrides.containsKey(e.id),
+        onToggleHidden: (h) => _setHidden(e, h),
+        onAssign: () => _openAssign(e),
+      ));
+    }
+    return children;
+  }
+
+  /// "Today" / "Tomorrow" / "Wed, Jan 3" for a day header.
+  String _dayLabel(DateTime d) {
+    final now = DateTime.now();
+    final day = DateTime(d.year, d.month, d.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final delta = day.difference(today).inDays;
+    if (delta == 0) return 'Today';
+    if (delta == 1) return 'Tomorrow';
+    const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const mo = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${wd[d.weekday - 1]}, ${mo[d.month - 1]} ${d.day}';
   }
 }
 
@@ -359,12 +444,15 @@ class _EventCard extends StatelessWidget {
     return hidden ? Opacity(opacity: 0.55, child: card) : card;
   }
 
+  // Day is shown in the section header, so this is just time (or "All day")
+  // plus the source calendar name.
   static String _when(CalendarEvent e) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     String two(int n) => n.toString().padLeft(2, '0');
-    final d = e.start;
-    return '${days[d.weekday - 1]} ${two(d.hour)}:${two(d.minute)}'
-        '–${two(e.end.hour)}:${two(e.end.minute)}';
+    final time = e.allDay
+        ? 'All day'
+        : '${two(e.start.hour)}:${two(e.start.minute)}'
+            '–${two(e.end.hour)}:${two(e.end.minute)}';
+    return e.calendarName == null ? time : '$time · ${e.calendarName}';
   }
 }
 
