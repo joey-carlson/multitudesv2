@@ -416,3 +416,60 @@ const Map<PersonaArchetype, PersonaArchetypeTemplate> archetypeTemplates = {
     typicalPeakEnd: '17:00',
   ),
 };
+
+/// Create a persona from an archetype template, applying optional overrides.
+/// Used by the "add persona" flow (preset path).
+Persona personaFromTemplate(
+  PersonaArchetype archetype, {
+  required String userId,
+  String? name,
+  String? emoji,
+  String? peakStart,
+  String? peakEnd,
+  double idealWeeklyHours = 0,
+}) {
+  final t = archetypeTemplates[archetype]!;
+  final n = (name ?? '').trim();
+  final e = (emoji ?? '').trim();
+  return Persona(
+    userId: userId,
+    name: n.isEmpty ? t.defaultName : n,
+    emoji: e.isEmpty ? t.emoji : e,
+    archetype: archetype,
+    primaryEnergy: t.primaryEnergy,
+    strengths: List.of(t.commonStrengths),
+    weaknesses: List.of(t.commonWeaknesses),
+    triggerConditions: List.of(t.typicalTriggers),
+    idealTasks: List.of(t.idealTaskCategories),
+    peakStartTime: peakStart ?? t.typicalPeakStart,
+    peakEndTime: peakEnd ?? t.typicalPeakEnd,
+    idealWeeklyHours: idealWeeklyHours,
+  );
+}
+
+/// Create a fully custom persona (no template). Used by the "add persona" flow
+/// (custom path).
+Persona personaCustom({
+  required String userId,
+  required String name,
+  String emoji = '✨',
+  String primaryEnergy = '',
+  String? peakStart,
+  String? peakEnd,
+  double idealWeeklyHours = 0,
+}) {
+  return Persona(
+    userId: userId,
+    name: name.trim(),
+    emoji: emoji.trim().isEmpty ? '✨' : emoji.trim(),
+    archetype: PersonaArchetype.custom,
+    primaryEnergy: primaryEnergy.trim(),
+    strengths: const [],
+    weaknesses: const [],
+    triggerConditions: const [],
+    idealTasks: const [],
+    peakStartTime: peakStart,
+    peakEndTime: peakEnd,
+    idealWeeklyHours: idealWeeklyHours,
+  );
+}

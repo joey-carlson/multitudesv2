@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/calendar_source.dart';
 import '../data/database.dart';
 import '../domain/persona.dart';
+import 'add_persona_screen.dart';
 import 'balance_screen.dart';
 import 'calendar_screen.dart';
 import 'persona_detail_screen.dart';
@@ -64,6 +65,20 @@ class HomeScreen extends StatelessWidget {
               onPressed: onRetake,
             ),
         ],
+      ),
+      floatingActionButton: Builder(
+        builder: (context) => FloatingActionButton.extended(
+          icon: const Icon(Icons.add),
+          label: const Text('Persona'),
+          onPressed: () async {
+            final added = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                builder: (_) => AddPersonaScreen(db: db, userId: userId),
+              ),
+            );
+            if (added == true) onRetake?.call();
+          },
+        ),
       ),
       body: FutureBuilder<Map<String, double>>(
         future: db.actualWeeklyHours(userId),
