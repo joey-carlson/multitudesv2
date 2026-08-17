@@ -189,16 +189,42 @@ class PersonaGenerator:
         
         return names
     
+    # Maps the time-range token in each `overall_energy_pattern` option to a
+    # (peak_start, peak_end) pair. Keyed on the "(Xam-Ypm)" substring because
+    # it is unique and stable even if the descriptive prefix/suffix changes.
+    # Options with no single peak ("It varies", "multiple peaks") are absent
+    # by design and fall back to the archetype template's default peak.
+    _PEAK_RANGES: Dict[str, tuple] = {
+        "(5am-7am)": (time(5, 0), time(7, 0)),
+        "(7am-9am)": (time(7, 0), time(9, 0)),
+        "(9am-12pm)": (time(9, 0), time(12, 0)),
+        "(12pm-3pm)": (time(12, 0), time(15, 0)),
+        "(3pm-6pm)": (time(15, 0), time(18, 0)),
+        "(6pm-8pm)": (time(18, 0), time(20, 0)),
+        "(8pm-11pm)": (time(20, 0), time(23, 0)),
+        "(11pm-2am)": (time(23, 0), time(2, 0)),
+    }
+
+    # Maps the time-range token in each `energy_dip_time` option to a
+    # (trough_start, trough_end) pair. "Other time" has no defined range and
+    # is intentionally absent (no trough set).
+    _TROUGH_RANGES: Dict[str, tuple] = {
+        "(10am-12pm)": (time(10, 0), time(12, 0)),
+        "(12pm-2pm)": (time(12, 0), time(14, 0)),
+        "(2pm-4pm)": (time(14, 0), time(16, 0)),
+        "(5pm-7pm)": (time(17, 0), time(19, 0)),
+    }
+
     def _extract_energy_config(
         self,
         survey_responses: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Extract energy pattern configuration from survey.
-        
+
         Args:
             survey_responses: Full survey response dictionary
-            
+
         Returns:
             Dictionary with peak, trough, recovery times
         """
@@ -210,54 +236,32 @@ class PersonaGenerator:
             "recovery_start": None,
             "recovery_end": None
         }
-        
-        # Parse overall energy pattern
+
+        # Parse overall energy pattern by matching the time-range token
         energy_pattern = survey_responses.get("overall_energy_pattern", "")
-        
-        if "Early morning (5am-9am)" in energy_pattern:
-            config["peak_start"] = time(5, 0)
-            config["peak_end"] = time(9, 0)
-        elif "Mid-morning (9am-12pm)" in energy_pattern:
-            config["peak_start"] = time(9, 0)
-            config["peak_end"] = time(12, 0)
-        elif "Early afternoon (12pm-3pm)" in energy_pattern:
-            config["peak_start"] = time(12, 0)
-            config["peak_end"] = time(15, 0)
-        elif "Late afternoon (3pm-6pm)" in energy_pattern:
-            config["peak_start"] = time(15, 0)
-            config["peak_end"] = time(18, 0)
-        elif "Evening (6pm-10pm)" in energy_pattern:
-            config["peak_start"] = time(18, 0)
-            config["peak_end"] = time(22, 0)
-        elif "Late night (10pm-2am)" in energy_pattern:
-            config["peak_start"] = time(22, 0)
-            config["peak_end"] = time(2, 0)
-        
+        for token, (peak_start, peak_end) in self._PEAK_RANGES.items():
+            if token in energy_pattern:
+                config["peak_start"] = peak_start
+                config["peak_end"] = peak_end
+                break
+
         # Parse energy dip if indicated
         has_dip = survey_responses.get("energy_dip", "")
         if "Yes" in has_dip or "Sometimes" in has_dip:
             dip_time = survey_responses.get("energy_dip_time", "")
-            
-            if "Late morning (10am-12pm)" in dip_time:
-                config["trough_start"] = time(10, 0)
-                config["trough_end"] = time(12, 0)
-            elif "Early afternoon (12pm-2pm)" in dip_time:
-                config["trough_start"] = time(12, 0)
-                config["trough_end"] = time(14, 0)
-            elif "Mid-afternoon (2pm-4pm)" in dip_time:
-                config["trough_start"] = time(14, 0)
-                config["trough_end"] = time(16, 0)
-            elif "Early evening (5pm-7pm)" in dip_time:
-                config["trough_start"] = time(17, 0)
-                config["trough_end"] = time(19, 0)
-        
+            for token, (trough_start, trough_end) in self._TROUGH_RANGES.items():
+                if token in dip_time:
+                    config["trough_start"] = trough_start
+                    config["trough_end"] = trough_end
+                    break
+
         # Set recovery period (typically after trough)
         if config["trough_end"]:
             # Recovery starts when trough ends
             trough_end_hour = config["trough_end"].hour
             config["recovery_start"] = config["trough_end"]
             config["recovery_end"] = time((trough_end_hour + 2) % 24, 0)
-        
+
         return config
     
     def _parse_time_allocation(

@@ -18,6 +18,7 @@ from src.core.personas import (
     generate_personas_from_survey,
     ARCHETYPE_TEMPLATES,
 )
+from src.core.personas.survey_config import get_question_by_id
 
 
 class TestPersonaModels:
@@ -149,7 +150,7 @@ class TestPersonaGenerator:
                 "🎨 The Artist - Expressive, introspective, imaginative"
             ],
             "custom_persona_names": "Creative Chris",
-            "overall_energy_pattern": "Evening (6pm-10pm)",
+            "overall_energy_pattern": "Early evening (6pm-8pm) - After-work hours",
         }
         # Act
         personas = generator.generate_personas_from_survey(responses)
@@ -162,18 +163,64 @@ class TestPersonaGenerator:
         # Arrange
         generator = PersonaGenerator("test-user")
         responses = {
-            "overall_energy_pattern": "Early morning (5am-9am)",
+            "overall_energy_pattern": "Early morning (7am-9am) - Pre-business hours",
             "energy_dip": "Yes, I notice a definite slump",
             "energy_dip_time": "Mid-afternoon (2pm-4pm)"
         }
         # Act
         energy_config = generator._extract_energy_config(responses)
         # Assert
-        assert energy_config["peak_start"] == time(5, 0)
+        assert energy_config["peak_start"] == time(7, 0)
         assert energy_config["peak_end"] == time(9, 0)
         assert energy_config["trough_start"] == time(14, 0)
         assert energy_config["trough_end"] == time(16, 0)
-    
+
+    # Expected (peak_start, peak_end) for each real survey option. The two
+    # "no single peak" options map to (None, None) by design.
+    _EXPECTED_PEAKS = {
+        "(5am-7am)": (time(5, 0), time(7, 0)),
+        "(7am-9am)": (time(7, 0), time(9, 0)),
+        "(9am-12pm)": (time(9, 0), time(12, 0)),
+        "(12pm-3pm)": (time(12, 0), time(15, 0)),
+        "(3pm-6pm)": (time(15, 0), time(18, 0)),
+        "(6pm-8pm)": (time(18, 0), time(20, 0)),
+        "(8pm-11pm)": (time(20, 0), time(23, 0)),
+        "(11pm-2am)": (time(23, 0), time(2, 0)),
+    }
+
+    @pytest.mark.parametrize(
+        "option", get_question_by_id("overall_energy_pattern").options
+    )
+    def test_every_energy_option_maps(self, option):
+        """Regression guard: every survey peak option maps to its expected times.
+
+        Prevents drift between survey_config options and the generator's
+        parser (the mismatch that silently broke half the options).
+        """
+        # Arrange
+        generator = PersonaGenerator("test-user")
+        expected = next(
+            (times for token, times in self._EXPECTED_PEAKS.items() if token in option),
+            (None, None),  # "It varies" / "multiple peaks" have no single peak
+        )
+        # Act
+        config = generator._extract_energy_config({"overall_energy_pattern": option})
+        # Assert
+        assert (config["peak_start"], config["peak_end"]) == expected
+
+    @pytest.mark.parametrize(
+        "option", get_question_by_id("energy_dip_time").options
+    )
+    def test_every_dip_option_maps(self, option):
+        """Regression guard: every dip-time option maps to a trough (or None for 'Other')."""
+        # Arrange
+        generator = PersonaGenerator("test-user")
+        responses = {"energy_dip": "Yes, I notice a definite slump", "energy_dip_time": option}
+        # Act
+        config = generator._extract_energy_config(responses)
+        # Assert: only "Other time" leaves the trough unset
+        assert (config["trough_start"] is None) == ("Other" in option)
+
     def test_time_allocation_parsing(self):
         """Test parsing weekly time allocation."""
         # Arrange
