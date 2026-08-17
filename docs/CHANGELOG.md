@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   matching. Calendar time now folds into the fed/starving balance (attributed
   via the effective persona over the next 7 days, combined with completed
   tasks), so an assignment visibly feeds its persona. analyze clean, 48 tests.
+- **Calendar view QoL** — events grouped under day headers (Today/Tomorrow/
+  weekday), a refresh button, a summary line (events · assigned · unmatched ·
+  hidden), source calendar name per event, distinct "All day" rendering, and a
+  guidance card nudging manual assignment when nothing matched.
 - **Persona Intelligence roadmap** (`PARKING_LOT.md`) — calendar-aware coaching
   direction (F1–F6); F2 and persona-matching improvements deferred with notes.
 - **Cross-language contract** — `scripts/export_persona_fixtures.py` generates
