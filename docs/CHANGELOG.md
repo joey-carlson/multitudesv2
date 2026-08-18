@@ -77,7 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Balance trends (depth)** — the fed/starving dashboard now shows a per-persona
   trend arrow (↑/→/↓, last 7 days vs the prior 7, from completed tasks + past
   calendar) and flags personas "getting less attention than before" — early
-  warning rather than a snapshot. analyze clean, 89 tests.
+  warning rather than a snapshot.
+- **Local energy forecasting (depth)** — a persona's detail screen shows an
+  "Observed energy pattern": average energy by hour-of-day from its own
+  check-ins, highlighting the forecast peak/trough hours (hourly bar chart).
+  On-device, appears once there are enough check-ins. analyze clean, 91 tests.
 - **Competitive analysis** (`docs/COMPETITIVE_ANALYSIS.md`) + depth/breadth
   improvement backlog with a recommended sequence recorded in `PARKING_LOT.md`.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
