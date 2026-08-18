@@ -129,6 +129,16 @@ class EventPersonaOverrides extends Table {
   Set<Column> get primaryKey => {eventId};
 }
 
+/// User-set energy impact (−2..+2) for an event, overriding the heuristic.
+@DataClassName('EventEnergyImpactRow')
+class EventEnergyImpacts extends Table {
+  TextColumn get eventId => text()();
+  IntColumn get impact => integer()(); // -2 draining .. +2 energizing
+
+  @override
+  Set<Column> get primaryKey => {eventId};
+}
+
 @DriftDatabase(tables: [
   Personas,
   EnergyReadings,
@@ -136,13 +146,14 @@ class EventPersonaOverrides extends Table {
   CalendarPrefs,
   HiddenEvents,
   EventPersonaOverrides,
+  EventEnergyImpacts,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -154,8 +165,27 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) await m.createTable(calendarPrefs);
           if (from < 5) await m.createTable(hiddenEvents);
           if (from < 6) await m.createTable(eventPersonaOverrides);
+          if (from < 7) await m.createTable(eventEnergyImpacts);
         },
       );
+
+  /// User-set energy impacts by event id (−2..+2).
+  Future<Map<String, int>> energyImpactMap() async {
+    final rows = await select(eventEnergyImpacts).get();
+    return {for (final r in rows) r.eventId: r.impact};
+  }
+
+  /// Set (or clear, when [value] is null) an event's energy impact.
+  Future<void> setEventEnergyImpact(String eventId, int? value) async {
+    if (value == null) {
+      await (delete(eventEnergyImpacts)..where((t) => t.eventId.equals(eventId)))
+          .go();
+    } else {
+      await into(eventEnergyImpacts).insertOnConflictUpdate(
+        EventEnergyImpactsCompanion.insert(eventId: eventId, impact: value),
+      );
+    }
+  }
 
   /// Manual event→persona assignments, by event id.
   Future<Map<String, String>> eventPersonaMap() async {

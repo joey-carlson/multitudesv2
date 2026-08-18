@@ -2898,6 +2898,224 @@ class EventPersonaOverridesCompanion extends UpdateCompanion<EventPersonaRow> {
   }
 }
 
+class $EventEnergyImpactsTable extends EventEnergyImpacts
+    with TableInfo<$EventEnergyImpactsTable, EventEnergyImpactRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventEnergyImpactsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _impactMeta = const VerificationMeta('impact');
+  @override
+  late final GeneratedColumn<int> impact = GeneratedColumn<int>(
+    'impact',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [eventId, impact];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'event_energy_impacts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventEnergyImpactRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('impact')) {
+      context.handle(
+        _impactMeta,
+        impact.isAcceptableOrUnknown(data['impact']!, _impactMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_impactMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  EventEnergyImpactRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventEnergyImpactRow(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+      impact: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}impact'],
+      )!,
+    );
+  }
+
+  @override
+  $EventEnergyImpactsTable createAlias(String alias) {
+    return $EventEnergyImpactsTable(attachedDatabase, alias);
+  }
+}
+
+class EventEnergyImpactRow extends DataClass
+    implements Insertable<EventEnergyImpactRow> {
+  final String eventId;
+  final int impact;
+  const EventEnergyImpactRow({required this.eventId, required this.impact});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['event_id'] = Variable<String>(eventId);
+    map['impact'] = Variable<int>(impact);
+    return map;
+  }
+
+  EventEnergyImpactsCompanion toCompanion(bool nullToAbsent) {
+    return EventEnergyImpactsCompanion(
+      eventId: Value(eventId),
+      impact: Value(impact),
+    );
+  }
+
+  factory EventEnergyImpactRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventEnergyImpactRow(
+      eventId: serializer.fromJson<String>(json['eventId']),
+      impact: serializer.fromJson<int>(json['impact']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'eventId': serializer.toJson<String>(eventId),
+      'impact': serializer.toJson<int>(impact),
+    };
+  }
+
+  EventEnergyImpactRow copyWith({String? eventId, int? impact}) =>
+      EventEnergyImpactRow(
+        eventId: eventId ?? this.eventId,
+        impact: impact ?? this.impact,
+      );
+  EventEnergyImpactRow copyWithCompanion(EventEnergyImpactsCompanion data) {
+    return EventEnergyImpactRow(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      impact: data.impact.present ? data.impact.value : this.impact,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventEnergyImpactRow(')
+          ..write('eventId: $eventId, ')
+          ..write('impact: $impact')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(eventId, impact);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventEnergyImpactRow &&
+          other.eventId == this.eventId &&
+          other.impact == this.impact);
+}
+
+class EventEnergyImpactsCompanion
+    extends UpdateCompanion<EventEnergyImpactRow> {
+  final Value<String> eventId;
+  final Value<int> impact;
+  final Value<int> rowid;
+  const EventEnergyImpactsCompanion({
+    this.eventId = const Value.absent(),
+    this.impact = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventEnergyImpactsCompanion.insert({
+    required String eventId,
+    required int impact,
+    this.rowid = const Value.absent(),
+  }) : eventId = Value(eventId),
+       impact = Value(impact);
+  static Insertable<EventEnergyImpactRow> custom({
+    Expression<String>? eventId,
+    Expression<int>? impact,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (impact != null) 'impact': impact,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventEnergyImpactsCompanion copyWith({
+    Value<String>? eventId,
+    Value<int>? impact,
+    Value<int>? rowid,
+  }) {
+    return EventEnergyImpactsCompanion(
+      eventId: eventId ?? this.eventId,
+      impact: impact ?? this.impact,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (impact.present) {
+      map['impact'] = Variable<int>(impact.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventEnergyImpactsCompanion(')
+          ..write('eventId: $eventId, ')
+          ..write('impact: $impact, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2908,6 +3126,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HiddenEventsTable hiddenEvents = $HiddenEventsTable(this);
   late final $EventPersonaOverridesTable eventPersonaOverrides =
       $EventPersonaOverridesTable(this);
+  late final $EventEnergyImpactsTable eventEnergyImpacts =
+      $EventEnergyImpactsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2919,6 +3139,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     calendarPrefs,
     hiddenEvents,
     eventPersonaOverrides,
+    eventEnergyImpacts,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4862,6 +5083,162 @@ typedef $$EventPersonaOverridesTableProcessedTableManager =
       EventPersonaRow,
       PrefetchHooks Function()
     >;
+typedef $$EventEnergyImpactsTableCreateCompanionBuilder =
+    EventEnergyImpactsCompanion Function({
+      required String eventId,
+      required int impact,
+      Value<int> rowid,
+    });
+typedef $$EventEnergyImpactsTableUpdateCompanionBuilder =
+    EventEnergyImpactsCompanion Function({
+      Value<String> eventId,
+      Value<int> impact,
+      Value<int> rowid,
+    });
+
+class $$EventEnergyImpactsTableFilterComposer
+    extends Composer<_$AppDatabase, $EventEnergyImpactsTable> {
+  $$EventEnergyImpactsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get impact => $composableBuilder(
+    column: $table.impact,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EventEnergyImpactsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EventEnergyImpactsTable> {
+  $$EventEnergyImpactsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get impact => $composableBuilder(
+    column: $table.impact,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EventEnergyImpactsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EventEnergyImpactsTable> {
+  $$EventEnergyImpactsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+
+  GeneratedColumn<int> get impact =>
+      $composableBuilder(column: $table.impact, builder: (column) => column);
+}
+
+class $$EventEnergyImpactsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EventEnergyImpactsTable,
+          EventEnergyImpactRow,
+          $$EventEnergyImpactsTableFilterComposer,
+          $$EventEnergyImpactsTableOrderingComposer,
+          $$EventEnergyImpactsTableAnnotationComposer,
+          $$EventEnergyImpactsTableCreateCompanionBuilder,
+          $$EventEnergyImpactsTableUpdateCompanionBuilder,
+          (
+            EventEnergyImpactRow,
+            BaseReferences<
+              _$AppDatabase,
+              $EventEnergyImpactsTable,
+              EventEnergyImpactRow
+            >,
+          ),
+          EventEnergyImpactRow,
+          PrefetchHooks Function()
+        > {
+  $$EventEnergyImpactsTableTableManager(
+    _$AppDatabase db,
+    $EventEnergyImpactsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventEnergyImpactsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventEnergyImpactsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventEnergyImpactsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> eventId = const Value.absent(),
+                Value<int> impact = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventEnergyImpactsCompanion(
+                eventId: eventId,
+                impact: impact,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String eventId,
+                required int impact,
+                Value<int> rowid = const Value.absent(),
+              }) => EventEnergyImpactsCompanion.insert(
+                eventId: eventId,
+                impact: impact,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EventEnergyImpactsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EventEnergyImpactsTable,
+      EventEnergyImpactRow,
+      $$EventEnergyImpactsTableFilterComposer,
+      $$EventEnergyImpactsTableOrderingComposer,
+      $$EventEnergyImpactsTableAnnotationComposer,
+      $$EventEnergyImpactsTableCreateCompanionBuilder,
+      $$EventEnergyImpactsTableUpdateCompanionBuilder,
+      (
+        EventEnergyImpactRow,
+        BaseReferences<
+          _$AppDatabase,
+          $EventEnergyImpactsTable,
+          EventEnergyImpactRow
+        >,
+      ),
+      EventEnergyImpactRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4878,4 +5255,6 @@ class $AppDatabaseManager {
       $$HiddenEventsTableTableManager(_db, _db.hiddenEvents);
   $$EventPersonaOverridesTableTableManager get eventPersonaOverrides =>
       $$EventPersonaOverridesTableTableManager(_db, _db.eventPersonaOverrides);
+  $$EventEnergyImpactsTableTableManager get eventEnergyImpacts =>
+      $$EventEnergyImpactsTableTableManager(_db, _db.eventEnergyImpacts);
 }

@@ -5,6 +5,7 @@ import '../data/database.dart';
 import '../domain/calendar_classification.dart';
 import '../domain/calendar_event.dart';
 import '../domain/calendar_matcher.dart';
+import '../domain/energy_impact.dart';
 import '../domain/persona.dart';
 import 'calendars_settings_screen.dart';
 
@@ -36,6 +37,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Map<String, CalendarKind> _kinds = const {};
   final Set<String> _hidden = {};
   final Map<String, String> _overrides = {}; // eventId -> personaId
+  final Map<String, int> _impacts = {}; // eventId -> energy impact (-2..2)
 
   @override
   void initState() {
@@ -63,6 +65,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     };
     final hidden = await widget.db.hiddenEventIds();
     final personaOverrides = await widget.db.eventPersonaMap();
+    final impacts = await widget.db.energyImpactMap();
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
@@ -78,6 +81,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _overrides
         ..clear()
         ..addAll(personaOverrides);
+      _impacts
+        ..clear()
+        ..addAll(impacts);
       _loading = false;
     });
   }
@@ -97,6 +103,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     });
     await widget.db.setEventPersona(e.id, personaId);
+  }
+
+  Future<void> _setImpact(CalendarEvent e, int? value) async {
+    setState(() {
+      if (value == null) {
+        _impacts.remove(e.id);
+      } else {
+        _impacts[e.id] = value;
+      }
+    });
+    await widget.db.setEventEnergyImpact(e.id, value);
+  }
+
+  void _openImpactPicker(CalendarEvent e) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('How does "${e.title}" affect your energy?',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            for (final imp in EnergyImpact.values.reversed) // energizing first
+              ListTile(
+                title: Text(imp.label),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _setImpact(e, imp.value);
+                },
+              ),
+            if (_impacts.containsKey(e.id))
+              ListTile(
+                leading: const Icon(Icons.auto_awesome),
+                title: const Text('Use auto estimate'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _setImpact(e, null);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _openAssign(CalendarEvent e) {
@@ -184,6 +236,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     Persona? personaOf(CalendarEvent e) =>
         effectivePersonaForEvent(e, widget.personas, _overrides);
+    EnergyImpact impactOf(CalendarEvent e) => _impacts.containsKey(e.id)
+        ? EnergyImpact.fromValue(_impacts[e.id]!)
+        : estimateEnergyImpact(personaOf(e), e.start);
 
     // Hide ignored calendars, apply the work/personal filter, and drop hidden
     // events unless the user is reviewing them. Sorted by start time.
@@ -201,6 +256,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final unmatched =
         visible.where((e) => !_hidden.contains(e.id) && personaOf(e) == null).length;
     final hiddenCount = _events.where((e) => _hidden.contains(e.id)).length;
+    final netEnergy = visible
+        .where((e) => !_hidden.contains(e.id))
+        .fold<int>(0, (s, e) => s + impactOf(e).value);
 
     return Column(
       children: [
@@ -219,6 +277,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   if (assigned > 0) '$assigned assigned',
                   if (unmatched > 0) '$unmatched unmatched',
                   if (hiddenCount > 0) '$hiddenCount hidden',
+                  'net energy ${netEnergy >= 0 ? '+' : ''}$netEnergy',
                 ].join(' · '),
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
@@ -229,7 +288,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ? const _Message('No matching events in the next 7 days.')
               : ListView(
                   padding: const EdgeInsets.all(16),
-                  children: _eventList(visible, kindOf, personaOf, unmatched),
+                  children:
+                      _eventList(visible, kindOf, personaOf, impactOf, unmatched),
                 ),
         ),
       ],
@@ -242,6 +302,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     List<CalendarEvent> visible,
     CalendarKind Function(CalendarEvent) kindOf,
     Persona? Function(CalendarEvent) personaOf,
+    EnergyImpact Function(CalendarEvent) impactOf,
     int unmatched,
   ) {
     final children = <Widget>[];
@@ -289,8 +350,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         hidden: _hidden.contains(e.id),
         persona: personaOf(e),
         isManual: _overrides.containsKey(e.id),
+        impact: impactOf(e),
+        isManualImpact: _impacts.containsKey(e.id),
         onToggleHidden: (h) => _setHidden(e, h),
         onAssign: () => _openAssign(e),
+        onSetImpact: () => _openImpactPicker(e),
       ));
     }
     return children;
@@ -349,8 +413,11 @@ class _EventCard extends StatelessWidget {
     required this.hidden,
     required this.persona,
     required this.isManual,
+    required this.impact,
+    required this.isManualImpact,
     required this.onToggleHidden,
     required this.onAssign,
+    required this.onSetImpact,
   });
 
   final CalendarEvent event;
@@ -358,8 +425,11 @@ class _EventCard extends StatelessWidget {
   final bool hidden;
   final Persona? persona;
   final bool isManual;
+  final EnergyImpact impact;
+  final bool isManualImpact;
   final ValueChanged<bool> onToggleHidden;
   final VoidCallback onAssign;
+  final VoidCallback onSetImpact;
 
   @override
   Widget build(BuildContext context) {
@@ -385,6 +455,8 @@ class _EventCard extends StatelessWidget {
                     switch (v) {
                       case 'assign':
                         onAssign();
+                      case 'impact':
+                        onSetImpact();
                       case 'hide':
                         onToggleHidden(true);
                       case 'unhide':
@@ -397,6 +469,10 @@ class _EventCard extends StatelessWidget {
                       child: Text(persona == null
                           ? 'Assign persona…'
                           : 'Change persona…'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'impact',
+                      child: Text('Set energy impact…'),
                     ),
                     PopupMenuItem(
                       value: hidden ? 'unhide' : 'hide',
@@ -433,6 +509,13 @@ class _EventCard extends StatelessWidget {
                   else
                     _PersonaLine(
                         persona: persona!, event: event, isManual: isManual),
+                  if (!hidden) ...[
+                    const SizedBox(height: 6),
+                    _ImpactChip(
+                        impact: impact,
+                        isAuto: !isManualImpact,
+                        onTap: onSetImpact),
+                  ],
                 ],
               ),
             ),
@@ -472,6 +555,43 @@ class _KindChip extends StatelessWidget {
       ),
       child: Text(kind.label,
           style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+/// Tappable chip showing an event's energy impact (draining↔energizing).
+class _ImpactChip extends StatelessWidget {
+  const _ImpactChip(
+      {required this.impact, required this.isAuto, required this.onTap});
+
+  final EnergyImpact impact;
+  final bool isAuto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (impact) {
+      EnergyImpact.energizing => Colors.green,
+      EnergyImpact.somewhatEnergizing => Colors.teal,
+      EnergyImpact.neutral => Colors.grey,
+      EnergyImpact.somewhatDraining => Colors.orange,
+      EnergyImpact.draining => Colors.deepOrange,
+    };
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          isAuto ? '${impact.label} · auto' : impact.label,
+          style: TextStyle(
+              color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+      ),
     );
   }
 }

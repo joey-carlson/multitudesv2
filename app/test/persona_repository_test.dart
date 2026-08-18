@@ -170,4 +170,18 @@ void main() {
     await db.setEventPersona('evt-1', null);
     expect(await db.eventPersonaMap(), isEmpty);
   });
+
+  test('energy impacts: set, read back, update, and clear', () async {
+    expect(await db.energyImpactMap(), isEmpty);
+
+    await db.setEventEnergyImpact('evt-1', 2);
+    await db.setEventEnergyImpact('evt-2', -2);
+    expect(await db.energyImpactMap(), {'evt-1': 2, 'evt-2': -2});
+
+    await db.setEventEnergyImpact('evt-1', -1); // upsert
+    expect((await db.energyImpactMap())['evt-1'], -1);
+
+    await db.setEventEnergyImpact('evt-1', null); // clear
+    expect((await db.energyImpactMap()).containsKey('evt-1'), isFalse);
+  });
 }
