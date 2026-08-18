@@ -39,9 +39,16 @@ enrichment.
 **F4 — Rebalancing suggestions.**
 - (a) On-device: for starving personas, suggest activities/downtime that match
   their `ideal_tasks` and fit their peak windows and open calendar slots.
+  **DONE (2026-08-18)** — Insights "Feed a starving persona" section finds the
+  soonest open peak slot and suggests ideal activities. Informational.
 - (b) **Online (optional):** look up local events/classes/opportunities to feed
   starving personas — requires network + a third-party API (events/places).
-  Off by default; see Decision C.
+  Off by default; see Decision C. Still deferred.
+
+**Competitive landscape + depth/breadth improvement ideas:** see
+`docs/COMPETITIVE_ANALYSIS.md` (2026-08-18) — surveyed Motion/Reclaim/Sunsama/
+SkedPal/RISE/How-We-Feel/Daylio/Habitica/etc.; lists ~10 depth + ~12 breadth
+improvements tagged local-first vs. needs-online.
 
 **F5 — Adaptive learning over time.**
 - Use accumulated `energy_readings` + task/calendar actuals to detect that a

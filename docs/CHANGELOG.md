@@ -69,7 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from energy check-ins that fall outside a persona's configured peak; offered
   for approval, never auto-applied. Design grounded in a research pass (IFS
   parts as metaphor, possible-selves, self-complexity coverage, wheel-of-life,
-  chronotype; offer-never-assign, no clinical claims). analyze clean, 79 tests.
+  chronotype; offer-never-assign, no clinical claims).
+- **Rebalancing suggestions (roadmap F4)** — for under-fed ("starving") personas,
+  the Insights screen finds an open slot in that persona's peak window over the
+  next week and suggests doing a couple of its ideal activities. Informational;
+  local-events lookup deferred. analyze clean, 83 tests.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a
