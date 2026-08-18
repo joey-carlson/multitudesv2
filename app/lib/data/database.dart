@@ -177,6 +177,21 @@ class HabitCompletions extends Table {
   Set<Column> get primaryKey => {habitId, day};
 }
 
+/// A reflective journal entry tied to a persona.
+@DataClassName('JournalEntryRow')
+class JournalEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get personaId =>
+      text().references(Personas, #id, onDelete: KeyAction.cascade)();
+  TextColumn get prompt => text().nullable()();
+  TextColumn get body => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(tables: [
   Personas,
   EnergyReadings,
@@ -188,13 +203,14 @@ class HabitCompletions extends Table {
   LearnedAssociations,
   Habits,
   HabitCompletions,
+  JournalEntries,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -212,8 +228,33 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(habits);
             await m.createTable(habitCompletions);
           }
+          if (from < 10) await m.createTable(journalEntries);
         },
       );
+
+  /// Add a journal entry.
+  Future<void> addJournalEntry(
+      {required String userId,
+      required String personaId,
+      String? prompt,
+      required String body}) async {
+    await into(journalEntries).insert(JournalEntriesCompanion.insert(
+      id: _newId(),
+      userId: userId,
+      personaId: personaId,
+      prompt: Value(prompt),
+      body: body,
+    ));
+  }
+
+  /// Recent journal entries for a persona, newest first.
+  Future<List<JournalEntryRow>> journalEntriesForPersona(String personaId,
+          {int limit = 50}) =>
+      (select(journalEntries)
+            ..where((t) => t.personaId.equals(personaId))
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(limit))
+          .get();
 
   /// Add a habit.
   Future<void> addHabit(Habit h) async {

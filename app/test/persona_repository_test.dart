@@ -240,6 +240,22 @@ void main() {
     expect(habits.single.$2, isEmpty);
   });
 
+  test('journal: add entries and read back newest-first', () async {
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🎨 The Artist'],
+    }));
+    final pid = (await db.activePersonas('u1')).single.id!;
+
+    await db.addJournalEntry(
+        userId: 'u1', personaId: pid, prompt: 'What went well?', body: 'First');
+    await db.addJournalEntry(userId: 'u1', personaId: pid, body: 'Second');
+
+    final entries = await db.journalEntriesForPersona(pid);
+    expect(entries.map((e) => e.body).toSet(), {'First', 'Second'});
+    expect(entries.firstWhere((e) => e.body == 'First').prompt, 'What went well?');
+    expect(entries.firstWhere((e) => e.body == 'Second').prompt, isNull);
+  });
+
   test('learned associations: record tokens, read back, accumulate weight',
       () async {
     expect(await db.learnedTokensByPersona(), isEmpty);

@@ -7,6 +7,7 @@ import '../domain/habit.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
 import 'edit_persona_screen.dart';
+import 'write_journal_screen.dart';
 
 /// Full detail for one persona: energy windows, current state, the rich
 /// attributes the generator produced, energy check-ins, and tasks.
@@ -36,6 +37,7 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
   late Future<List<EnergyReading>> _readings;
   late Future<List<Task>> _tasks;
   late Future<List<(Habit, Set<DateTime>)>> _habits;
+  late Future<List<JournalEntryRow>> _journal;
 
   @override
   void initState() {
@@ -43,6 +45,51 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
     _loadReadings();
     _loadTasks();
     _loadHabits();
+    _loadJournal();
+  }
+
+  void _loadJournal() {
+    final id = _persona.id;
+    _journal = id == null
+        ? Future.value(const [])
+        : widget.db.journalEntriesForPersona(id);
+  }
+
+  Future<void> _writeJournal() async {
+    final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => WriteJournalScreen(
+          db: widget.db, userId: widget.userId, persona: _persona),
+    ));
+    if (saved == true && mounted) setState(_loadJournal);
+  }
+
+  void _viewEntry(JournalEntryRow e) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_formatTime(e.createdAt)),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (e.prompt != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('“${e.prompt}”',
+                      style: const TextStyle(fontStyle: FontStyle.italic)),
+                ),
+              Text(e.body),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close')),
+        ],
+      ),
+    );
   }
 
   void _loadHabits() {
@@ -247,6 +294,8 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
           const SizedBox(height: 20),
           _habitsCard(),
           const SizedBox(height: 20),
+          _journalCard(),
+          const SizedBox(height: 20),
           _checkInCard(),
           const SizedBox(height: 20),
           _energyProfileCard(),
@@ -369,6 +418,68 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
                           title: Text(habit.title),
                           secondary: _StreakBadge(
                               streak: currentStreak(days, today: now)),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _journalCard() => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text('Journal',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                  TextButton.icon(
+                    onPressed: _persona.id == null ? null : _writeJournal,
+                    icon: const Icon(Icons.edit_note),
+                    label: const Text('Write'),
+                  ),
+                ],
+              ),
+              FutureBuilder<List<JournalEntryRow>>(
+                future: _journal,
+                builder: (context, snap) {
+                  final entries = snap.data ?? const [];
+                  if (entries.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No entries yet. Reflect on this persona.',
+                          style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final e in entries.take(5))
+                        ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.notes, size: 20),
+                          title: Text(
+                            e.body,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(_formatTime(e.createdAt)),
+                          onTap: () => _viewEntry(e),
+                        ),
+                      if (entries.length > 5)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text('+ ${entries.length - 5} more',
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 12)),
                         ),
                     ],
                   );
