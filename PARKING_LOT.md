@@ -45,10 +45,48 @@ enrichment.
   starving personas — requires network + a third-party API (events/places).
   Off by default; see Decision C. Still deferred.
 
-**Competitive landscape + depth/breadth improvement ideas:** see
-`docs/COMPETITIVE_ANALYSIS.md` (2026-08-18) — surveyed Motion/Reclaim/Sunsama/
-SkedPal/RISE/How-We-Feel/Daylio/Habitica/etc.; lists ~10 depth + ~12 breadth
-improvements tagged local-first vs. needs-online.
+**Competitive landscape + depth/breadth improvement ideas** (2026-08-18, from a
+research pass over Motion/Reclaim/Sunsama/SkedPal/RISE/How-We-Feel/Daylio/
+Habitica/IFS apps/etc.). Full product survey in `docs/COMPETITIVE_ANALYSIS.md`.
+Tags: `[LF]` = local-first OK; `[ONLINE]` = crosses the enrichment boundary
+(explicit opt-in).
+
+_DEPTH — improve existing features:_
+1. Balance **trends & decay** — fed/starving decays over time; show 7/30-day
+   trajectory; flag personas trending toward starvation. `[LF]` ← **PLAN: next**
+2. **Correlation analytics** (Daylio) — which event types/times/personas
+   correlate with energizing vs. draining. `[LF]`
+3. **Local energy forecasting** (RISE) — predict today's peak/trough per persona
+   from check-in history; auto-refine windows. `[LF]`
+4. **Two-axis mood check-ins** — energy × pleasantness (Mood Meter). `[LF]`
+5. **"Why matched" + confidence** on event→persona guesses. `[LF]`
+6. **On-device semantic matching** (bundled small model) for opaque titles. `[LF]`
+7. **Time Maps** — multiple/preferred scheduling windows per persona (SkedPal). `[LF]`
+8. **Smarter timing suggestions** — batch relocate; respect buffers/travel. `[LF]`
+9. **Wheel-of-Life** radial balance view. `[LF]`
+10. **Realism indicator** — warn when a persona is over-committed vs. free time. `[LF]`
+
+_BREADTH — new capabilities:_
+1. **Calendar write-back / auto-scheduling** with preview-and-approve — turns
+   suggestions into action. `[ONLINE]` (device write, real mutation; gate per change)
+2. **Focus mode + notifications** — persona-peak nudges, quiet hours. `[LF]`
+3. **Habits / streaks / dailies** feeding the balance model. `[LF]`
+4. **Per-persona journaling** with prompts; optional encryption. `[LF]`
+5. **Daily plan + evening shutdown ritual** (Sunsama). `[LF]`
+6. **Weekly review / reporting + CSV/PDF export.** `[LF]`
+7. **IFS-inspired "parts dialogue"** with care guardrails. `[LF]`
+8. **Companion / gamification** (Finch), optional/toggleable. `[LF]`
+9. **Wearable / health signals** (Apple Health/Health Connect). `[ONLINE]`
+10. **Voice / quick capture** (on-device STT). `[LF]`
+11. **External task-tool inbox** (Todoist/Notion). `[ONLINE]`
+12. **Optional human coaching / accountability.** `[ONLINE]`
+
+**Recommended sequence (current plan):** deepen the coaching brain locally first
+— (1) balance trends & decay → (3) local energy forecasting → (2) correlation
+analytics — then the engagement layer — BREADTH (2) focus/notifications, (5)
+daily+shutdown ritual, (3) habits, (4) journaling — and the one high-value
+boundary-crosser done carefully: BREADTH (1) calendar write-back with
+preview/approve.
 
 **F5 — Adaptive learning over time.**
 - Use accumulated `energy_readings` + task/calendar actuals to detect that a
