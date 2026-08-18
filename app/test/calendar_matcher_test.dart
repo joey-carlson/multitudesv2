@@ -123,4 +123,39 @@ void main() {
     expect(hours['pa'], closeTo(1.0, 1e-9)); // only e1
     expect(hours['pb'], closeTo(1.0, 1e-9)); // only e2
   });
+
+  group('lexicon + priors', () {
+    test('archetype lexicon matches typical work titles', () {
+      final personas = [
+        pid('pa', PersonaArchetype.professional, const []),
+        pid('pb', PersonaArchetype.artist, const []),
+      ];
+      // "standup"/"meeting" aren't in the persona's own words — lexicon catches.
+      final m = rankPersonasForEvent(_event('Team standup meeting'), personas);
+      expect(m.first.persona.archetype, PersonaArchetype.professional);
+    });
+
+    test('personal lexicon (gym) matches the inner-child persona', () {
+      final personas = [
+        pid('pa', PersonaArchetype.professional, const []),
+        pid('pi', PersonaArchetype.innerChild, const []),
+      ];
+      final m = rankPersonasForEvent(_event('Morning gym session'), personas);
+      expect(m.first.persona.archetype, PersonaArchetype.innerChild);
+    });
+
+    test('domain prior: a work calendar favors the work-domain persona', () {
+      // "review" is in both professional and historian lexicons.
+      final personas = [
+        pid('ph', PersonaArchetype.historian, const []),
+        pid('pp', PersonaArchetype.professional, const []),
+      ];
+      final m = rankPersonasForEvent(
+        _event('Weekly review'),
+        personas,
+        eventKind: CalendarKind.work,
+      );
+      expect(m.first.persona.archetype, PersonaArchetype.professional);
+    });
+  });
 }

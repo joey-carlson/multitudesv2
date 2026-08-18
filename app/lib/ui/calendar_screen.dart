@@ -234,8 +234,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ? CalendarKind.unset
         : (_kinds[e.calendarId] ?? CalendarKind.unset);
 
-    Persona? personaOf(CalendarEvent e) =>
-        effectivePersonaForEvent(e, widget.personas, _overrides);
+    Persona? personaOf(CalendarEvent e) => effectivePersonaForEvent(
+        e, widget.personas, _overrides,
+        eventKind: kindOf(e));
     EnergyImpact impactOf(CalendarEvent e) => _impacts.containsKey(e.id)
         ? EnergyImpact.fromValue(_impacts[e.id]!)
         : estimateEnergyImpact(personaOf(e), e.start);
