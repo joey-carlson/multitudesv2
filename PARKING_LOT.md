@@ -90,9 +90,9 @@ preview/approve.
 
 **Progress (2026-08-18):** DONE — balance trends & decay; local energy
 forecasting; correlation analytics (Patterns screen); habits + streaks;
-per-persona journaling (evidence-based prompts). REMAINING engagement layer —
-focus/notifications (native, needs permission), daily+shutdown ritual; then
-calendar write-back.
+per-persona journaling (evidence-based prompts); daily plan + shutdown ritual.
+REMAINING engagement layer — focus mode + notifications (native, needs
+permission); then calendar write-back (preview/approve).
 
 **F5 — Adaptive learning over time.**
 - Use accumulated `energy_readings` + task/calendar actuals to detect that a
