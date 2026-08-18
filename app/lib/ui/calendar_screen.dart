@@ -7,7 +7,9 @@ import '../domain/calendar_event.dart';
 import '../domain/calendar_matcher.dart';
 import '../domain/energy_impact.dart';
 import '../domain/persona.dart';
+import '../domain/timing_suggestion.dart';
 import 'calendars_settings_screen.dart';
+import 'suggestions_screen.dart';
 
 /// Upcoming calendar events matched to the best-fit persona, with work/personal
 /// labels. Ignored calendars are hidden; a filter narrows to Work or Personal.
@@ -214,6 +216,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: const Text('Calendar'),
         actions: [
+          if (!_loading && _granted) _suggestionsAction(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -235,6 +238,50 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  Widget _suggestionsAction() {
+    final count = _suggestions().length;
+    final button = IconButton(
+      icon: const Icon(Icons.lightbulb_outline),
+      tooltip: 'Timing suggestions',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SuggestionsScreen(suggestions: _suggestions()),
+        ),
+      ),
+    );
+    return count == 0
+        ? button
+        : Badge(label: Text('$count'), offset: const Offset(-6, 6), child: button);
+  }
+
+  CalendarKind _kindOf(CalendarEvent e) => e.calendarId == null
+      ? CalendarKind.unset
+      : (_kinds[e.calendarId] ?? CalendarKind.unset);
+
+  Persona? _personaOf(CalendarEvent e) => effectivePersonaForEvent(
+      e, widget.personas, _overrides,
+      eventKind: _kindOf(e), learnedByPersona: _learned);
+
+  EnergyImpact _impactOf(CalendarEvent e) => _impacts.containsKey(e.id)
+      ? EnergyImpact.fromValue(_impacts[e.id]!)
+      : estimateEnergyImpact(_personaOf(e), e.start);
+
+  /// Timing suggestions across non-hidden, non-ignored events, strongest first.
+  List<TimingSuggestion> _suggestions() {
+    final out = <TimingSuggestion>[];
+    for (final e in _events) {
+      if (_hidden.contains(e.id)) continue;
+      if (_kindOf(e) == CalendarKind.ignore) continue;
+      final s = suggestTimingForEvent(e, _personaOf(e));
+      if (s != null) out.add(s);
+    }
+    out.sort((a, b) {
+      final bySeverity = a.severity.index.compareTo(b.severity.index);
+      return bySeverity != 0 ? bySeverity : a.event.start.compareTo(b.event.start);
+    });
+    return out;
+  }
+
   Widget _buildBody() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (!_granted) {
@@ -242,21 +289,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           '🔒 Calendar access was denied.\nEnable it in system settings to see your events.');
     }
 
-    CalendarKind kindOf(CalendarEvent e) => e.calendarId == null
-        ? CalendarKind.unset
-        : (_kinds[e.calendarId] ?? CalendarKind.unset);
-
-    Persona? personaOf(CalendarEvent e) => effectivePersonaForEvent(
-        e, widget.personas, _overrides,
-        eventKind: kindOf(e), learnedByPersona: _learned);
-    EnergyImpact impactOf(CalendarEvent e) => _impacts.containsKey(e.id)
-        ? EnergyImpact.fromValue(_impacts[e.id]!)
-        : estimateEnergyImpact(personaOf(e), e.start);
-
     // Hide ignored calendars, apply the work/personal filter, and drop hidden
     // events unless the user is reviewing them. Sorted by start time.
     final visible = _events.where((e) {
-      final k = kindOf(e);
+      final k = _kindOf(e);
       if (k == CalendarKind.ignore) return false;
       if (!_showHidden && _hidden.contains(e.id)) return false;
       if (_filter == null) return true;
@@ -267,11 +303,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     // Summary counts over the visible set.
     final assigned = visible.where((e) => _overrides.containsKey(e.id)).length;
     final unmatched =
-        visible.where((e) => !_hidden.contains(e.id) && personaOf(e) == null).length;
+        visible.where((e) => !_hidden.contains(e.id) && _personaOf(e) == null).length;
     final hiddenCount = _events.where((e) => _hidden.contains(e.id)).length;
     final netEnergy = visible
         .where((e) => !_hidden.contains(e.id))
-        .fold<int>(0, (s, e) => s + impactOf(e).value);
+        .fold<int>(0, (s, e) => s + _impactOf(e).value);
 
     return Column(
       children: [
@@ -301,8 +337,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ? const _Message('No matching events in the next 7 days.')
               : ListView(
                   padding: const EdgeInsets.all(16),
-                  children:
-                      _eventList(visible, kindOf, personaOf, impactOf, unmatched),
+                  children: _eventList(visible, unmatched),
                 ),
         ),
       ],
@@ -311,13 +346,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// Builds the scrollable list: source note, empty-match guidance, then events
   /// grouped under day headers (Today / Tomorrow / weekday).
-  List<Widget> _eventList(
-    List<CalendarEvent> visible,
-    CalendarKind Function(CalendarEvent) kindOf,
-    Persona? Function(CalendarEvent) personaOf,
-    EnergyImpact Function(CalendarEvent) impactOf,
-    int unmatched,
-  ) {
+  List<Widget> _eventList(List<CalendarEvent> visible, int unmatched) {
     final children = <Widget>[];
 
     if (!widget.source.isLive) {
@@ -359,11 +388,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
       children.add(_EventCard(
         event: e,
-        kind: kindOf(e),
+        kind: _kindOf(e),
         hidden: _hidden.contains(e.id),
-        persona: personaOf(e),
+        persona: _personaOf(e),
         isManual: _overrides.containsKey(e.id),
-        impact: impactOf(e),
+        impact: _impactOf(e),
         isManualImpact: _impacts.containsKey(e.id),
         onToggleHidden: (h) => _setHidden(e, h),
         onAssign: () => _openAssign(e),
@@ -624,12 +653,19 @@ class _PersonaLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, note, color) = switch (persona.energyStateAt(event.start)) {
+    final state = persona.energyStateAt(event.start);
+    var (icon, note, color) = switch (state) {
       EnergyState.peak => ('✅', 'during their peak', Colors.green),
       EnergyState.trough => ('⚠️', 'during their low-energy trough', Colors.orange),
       EnergyState.recovery => ('🔋', 'during their recovery window', Colors.blue),
       EnergyState.neutral => ('•', 'outside their peak hours', Colors.grey),
     };
+    // Inline timing hint: for a trough event, suggest the persona's peak window.
+    if (state == EnergyState.trough &&
+        persona.peakStartTime != null &&
+        persona.peakEndTime != null) {
+      note = '$note — better ${persona.peakStartTime}–${persona.peakEndTime}';
+    }
     return Row(
       children: [
         Chip(
