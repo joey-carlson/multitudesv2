@@ -93,5 +93,19 @@ void main() {
           peakStart: '07:00', peakEnd: '09:00');
       expect(suggestPeakAdjustment(p, [_reading(15, 9), _reading(15, 8)]), isNull);
     });
+
+    test('late-night high energy averages to midnight, not noon (circular)', () {
+      final p = _persona(PersonaArchetype.professional,
+          peakStart: '07:00', peakEnd: '09:00');
+      final s = suggestPeakAdjustment(p, [
+        _reading(23, 8),
+        _reading(0, 9),
+        _reading(1, 8),
+        _reading(23, 9),
+      ])!;
+      // Center ~00:00 → window 23:00–02:00 (wraps midnight), not ~noon.
+      expect(s.suggestedStart, '23:00');
+      expect(s.suggestedEnd, '02:00');
+    });
   });
 }

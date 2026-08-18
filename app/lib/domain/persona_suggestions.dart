@@ -4,6 +4,8 @@
 /// (never auto-applied).
 library;
 
+import 'dart:math' as math;
+
 import 'calendar_event.dart';
 import 'calendar_matcher.dart';
 import 'energy_reading.dart';
@@ -81,16 +83,25 @@ PeakAdjustmentSuggestion? suggestPeakAdjustment(
   final high = readings.where((r) => r.energyLevel >= highThreshold).toList();
   if (high.length < minReadings) return null;
 
-  final avgHour = (high.map((r) => r.timestamp.hour).reduce((a, b) => a + b) /
-          high.length)
-      .round();
+  // Circular mean of the hour-of-day (so late-night check-ins near 23:00/01:00
+  // average to ~midnight, not noon).
+  var sumSin = 0.0, sumCos = 0.0;
+  for (final r in high) {
+    final a = 2 * math.pi * r.timestamp.hour / 24;
+    sumSin += math.sin(a);
+    sumCos += math.cos(a);
+  }
+  var angle = math.atan2(sumSin / high.length, sumCos / high.length);
+  if (angle < 0) angle += 2 * math.pi;
+  final centerHour = (angle / (2 * math.pi) * 24).round() % 24;
 
   // If the current peak already covers the observed high hour, no change.
-  final at = DateTime(2026, 1, 1, avgHour);
+  final at = DateTime(2026, 1, 1, centerHour);
   if (persona.isAtPeak(at)) return null;
 
-  final start = (avgHour - 1).clamp(0, 23);
-  final end = (avgHour + 2).clamp(0, 23);
+  // A 3-hour window centered on the observed high hour; wraps past midnight.
+  final start = (centerHour - 1 + 24) % 24;
+  final end = (centerHour + 2) % 24;
   String hh(int h) => '${h.toString().padLeft(2, '0')}:00';
 
   // Skip if it would produce the same window the persona already has.

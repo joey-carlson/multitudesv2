@@ -26,7 +26,9 @@ DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 int currentStreak(Set<DateTime> completedDays, {required DateTime today}) {
   final days = completedDays.map(_dateOnly).toSet();
   final t = _dateOnly(today);
-  final yesterday = t.subtract(const Duration(days: 1));
+  // Step by calendar day (DateTime normalizes day-1), not a fixed 24h, so the
+  // walk stays on date-only midnights across DST transitions.
+  final yesterday = DateTime(t.year, t.month, t.day - 1);
 
   DateTime? anchor;
   if (days.contains(t)) {
@@ -40,7 +42,7 @@ int currentStreak(Set<DateTime> completedDays, {required DateTime today}) {
   var cur = anchor;
   while (days.contains(cur)) {
     streak++;
-    cur = cur.subtract(const Duration(days: 1));
+    cur = DateTime(cur.year, cur.month, cur.day - 1);
   }
   return streak;
 }

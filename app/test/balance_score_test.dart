@@ -32,6 +32,12 @@ void main() {
     test('no target set -> neutral 0.5', () {
       expect(_persona(ideal: 0).balanceScore(5), 0.5);
     });
+
+    test('stays within 0..1 for negative or huge inputs', () {
+      expect(_persona(ideal: 40).balanceScore(-5), 0.0); // clamped
+      expect(_persona(ideal: 40).balanceScore(1000), 0.0); // over-fed clamps
+      expect(_persona(ideal: -10).balanceScore(5), 0.5); // negative target guard
+    });
   });
 
   group('Persona.fedState', () {

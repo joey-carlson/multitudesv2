@@ -26,6 +26,15 @@ void main() {
     test('empty → 0', () {
       expect(currentStreak(const {}, today: today), 0);
     });
+
+    test('walks correctly across a month boundary (calendar-day stepping)', () {
+      final streak = currentStreak({
+        DateTime(2026, 1, 1),
+        DateTime(2025, 12, 31),
+        DateTime(2025, 12, 30),
+      }, today: DateTime(2026, 1, 1));
+      expect(streak, 3);
+    });
   });
 
   group('doneToday', () {

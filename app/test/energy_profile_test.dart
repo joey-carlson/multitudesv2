@@ -14,6 +14,10 @@ void main() {
       expect(buildEnergyProfile([_r(9, 8), _r(9, 7)]), isNull);
     });
 
+    test('returns null (no crash) on empty input even if minReadings is 0', () {
+      expect(buildEnergyProfile(const [], minReadings: 0), isNull);
+    });
+
     test('averages by hour and finds peak/trough', () {
       final p = buildEnergyProfile([
         _r(9, 8), _r(9, 6), // 09:00 avg 7

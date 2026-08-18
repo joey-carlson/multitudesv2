@@ -43,13 +43,17 @@ List<RebalanceSuggestion> suggestRebalance({
   for (final p in starving) {
     final ps = _minutes(p.peakStartTime);
     final pe = _minutes(p.peakEndTime);
-    if (ps == null || pe == null || pe <= ps) continue; // need a normal window
+    if (ps == null || pe == null || pe == ps) continue; // need a window
 
     final day0 = DateTime(from.year, from.month, from.day);
     for (var d = 0; d < daysAhead; d++) {
       final day = day0.add(Duration(days: d));
       final slotStart = day.add(Duration(minutes: ps));
-      final slotEnd = day.add(Duration(minutes: pe));
+      // Peak windows may wrap past midnight (e.g. 23:00–02:00) — end on the
+      // next day, matching Persona.energyStateAt.
+      final slotEnd = pe > ps
+          ? day.add(Duration(minutes: pe))
+          : day.add(Duration(days: 1, minutes: pe));
       if (slotEnd.isBefore(from)) continue; // already passed today
 
       final busy = events.any(

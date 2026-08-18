@@ -144,9 +144,9 @@ class Persona {
   /// a port of the Python `calculate_balance_score`. 1.0 = on target,
   /// 0.5 = no target set, lower = under- or over-served.
   double balanceScore(double actualHours) {
-    if (idealWeeklyHours == 0) return 0.5;
+    if (idealWeeklyHours <= 0) return 0.5; // aligns with fedState's guard
     final ratio = actualHours / idealWeeklyHours;
-    if (ratio <= 1.0) return ratio;
+    if (ratio <= 1.0) return ratio.clamp(0.0, 1.0);
     return (2.0 - ratio).clamp(0.0, 1.0);
   }
 

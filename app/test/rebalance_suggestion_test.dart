@@ -50,4 +50,11 @@ void main() {
     expect(suggestRebalance(starving: const [], events: const [], from: from),
         isEmpty);
   });
+
+  test('handles a midnight-crossing peak window', () {
+    final nightOwl = _p(peakStart: '23:00', peakEnd: '02:00');
+    final s = suggestRebalance(starving: [nightOwl], events: const [], from: from);
+    expect(s.single.slotStart, DateTime(2026, 1, 1, 23));
+    expect(s.single.slotEnd, DateTime(2026, 1, 2, 2)); // wraps to next day
+  });
 }

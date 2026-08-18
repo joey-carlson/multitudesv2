@@ -30,7 +30,7 @@ class EnergyProfile {
 /// least [minReadings] check-ins to be meaningful.
 EnergyProfile? buildEnergyProfile(List<EnergyReading> readings,
     {int minReadings = 4}) {
-  if (readings.length < minReadings) return null;
+  if (readings.isEmpty || readings.length < minReadings) return null;
 
   final sums = <int, int>{};
   final counts = <int, int>{};

@@ -124,6 +124,37 @@ void main() {
     expect(hours['pb'], closeTo(1.0, 1e-9)); // only e2
   });
 
+  test('calendarHoursByPersona skips all-day and non-positive-duration events',
+      () {
+    final allDay = CalendarEvent(
+      id: 'ad',
+      title: 'Financial report', // matches professional
+      start: DateTime(2026, 1, 1),
+      end: DateTime(2026, 1, 2),
+      allDay: true,
+    );
+    final negative = CalendarEvent(
+      id: 'neg',
+      title: 'Financial report',
+      start: DateTime(2026, 1, 1, 10),
+      end: DateTime(2026, 1, 1, 9), // end before start
+    );
+    final hours = calendarHoursByPersona(
+      events: [allDay, negative],
+      personas: withIds,
+      overrides: const {},
+      hiddenEventIds: const {},
+      kindByCalendarId: const {},
+    );
+    expect(hours, isEmpty); // neither contributes
+  });
+
+  test('effectivePersonaForEvent returns null for a stale override id', () {
+    final e = _event('Financial report'); // would auto-match pa
+    final p = effectivePersonaForEvent(e, withIds, {e.id: 'deleted-persona'});
+    expect(p, isNull);
+  });
+
   group('lexicon + priors', () {
     test('archetype lexicon matches typical work titles', () {
       final personas = [

@@ -196,6 +196,9 @@ Persona? effectivePersonaForEvent(
     for (final p in personas) {
       if (p.id == overrideId) return p;
     }
+    // Explicitly pinned to a persona that no longer exists → treat as
+    // unmatched rather than silently auto-attributing to a different persona.
+    return null;
   }
   final matches = rankPersonasForEvent(event, personas,
       eventKind: eventKind, learnedByPersona: learnedByPersona);
@@ -216,6 +219,12 @@ Map<String, double> calendarHoursByPersona({
   final hours = <String, double>{};
   for (final e in events) {
     if (hiddenEventIds.contains(e.id)) continue;
+    // All-day events aren't "time spent" on a persona; a full-day (or
+    // malformed negative-duration) event would grossly skew the totals.
+    if (e.allDay) continue;
+    final minutes = e.duration.inMinutes;
+    if (minutes <= 0) continue;
+
     final kind = e.calendarId == null
         ? CalendarKind.unset
         : (kindByCalendarId[e.calendarId] ?? CalendarKind.unset);
@@ -225,7 +234,7 @@ Map<String, double> calendarHoursByPersona({
         eventKind: kind, learnedByPersona: learnedByPersona);
     final pid = persona?.id;
     if (pid == null) continue;
-    hours[pid] = (hours[pid] ?? 0) + e.duration.inMinutes / 60.0;
+    hours[pid] = (hours[pid] ?? 0) + minutes / 60.0;
   }
   return hours;
 }
