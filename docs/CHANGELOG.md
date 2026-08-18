@@ -65,7 +65,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved persona↔event matching** — added per-archetype keyword lexicons
   and a composite score (keyword overlap + time-of-day prior + work/personal
   domain prior) so auto-match fires on real calendar titles, not just events
-  containing a persona's own words. analyze clean, 64 tests.
+  containing a persona's own words.
+- **Learn from corrections** — manual persona assignments now teach the matcher
+  (event title/notes tokens → persona, weighted; Drift schema v8), so similar
+  future events auto-match. Learned tokens create matches on their own and
+  outweigh weak lexicon hits. Groundwork for F5. analyze clean, 67 tests.
 - **Design note** (`PARKING_LOT.md`): energizing-vs-draining activities grounded
   in existing research (Russell's circumplex valence/arousal, SDT subjective
   vitality, Mood Meter) with a heuristics-first design — rather than inventing.

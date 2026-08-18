@@ -127,11 +127,13 @@ nothing on a real calendar" problem for common titles.
 
 **Still deferred:**
 - More event signals: attendees, location, all-day vs. timed, recurrence.
-- **Learn from the user's manual assignments/corrections** (ties to F5) — e.g.
-  remember that "Book club" → a given persona.
 - Optional **semantic/LLM classification** (online-enrichment layer, Decision C)
-  for titles with no lexicon overlap (e.g. "Sync w/ Dana").
-- User-editable lexicons / per-persona keywords.
+  for titles with no lexicon/learned overlap (e.g. "Sync w/ Dana").
+- User-editable lexicons / per-persona keywords; review/prune learned tokens.
+
+**Learn-from-corrections: DONE (2026-08-17).** Manual assignments now teach the
+matcher (token→persona, weighted); learned tokens create matches and outweigh
+weak lexicon hits. This is the groundwork for F5 (suggest personas/adjustments).
 
 **F2 (timing suggestions)** can now be built on top of this matching, though
 learn-from-corrections would strengthen it further first.
