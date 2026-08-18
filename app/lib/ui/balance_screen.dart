@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../data/calendar_source.dart';
 import '../data/database.dart';
+import '../domain/balance_trend.dart';
 import '../domain/calendar_classification.dart';
+import '../domain/calendar_event.dart';
 import '../domain/calendar_matcher.dart';
 import '../domain/persona.dart';
 
@@ -29,18 +31,34 @@ class BalanceScreen extends StatefulWidget {
 }
 
 class _BalanceScreenState extends State<BalanceScreen> {
-  late Future<Map<String, double>> _future;
+  late Future<_BalanceData> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = _computeActualHours();
+    _future = _load();
   }
 
-  /// Combined actual weekly hours per persona id: completed tasks + calendar.
-  Future<Map<String, double>> _computeActualHours() async {
-    final combined =
+  /// Computes both the current "actual" hours per persona (tasks last 7d +
+  /// calendar next 7d, drives fed/starving) and a trend per persona (recent 7d
+  /// vs prior 7d, from completed tasks + past calendar).
+  Future<_BalanceData> _load() async {
+    final now = DateTime.now();
+
+    // Current actual (drives fed/starving): tasks last 7d + upcoming calendar.
+    final actual =
         Map<String, double>.from(await widget.db.actualWeeklyHours(widget.userId));
+
+    // Trend windows from completed tasks (recent = last 7d, prior = 8–14d ago).
+    final taskRecent = await widget.db.actualWeeklyHours(widget.userId);
+    final taskLast14 = await widget.db
+        .actualWeeklyHours(widget.userId, since: now.subtract(const Duration(days: 14)));
+    final recent = Map<String, double>.from(taskRecent);
+    final prior = <String, double>{};
+    for (final e in taskLast14.entries) {
+      prior[e.key] = (e.value - (taskRecent[e.key] ?? 0)).clamp(0, double.infinity);
+    }
+
     try {
       if (await widget.source.requestAccess()) {
         final calendars = await widget.source.listCalendars();
@@ -51,36 +69,57 @@ class _BalanceScreenState extends State<BalanceScreen> {
         final hidden = await widget.db.hiddenEventIds();
         final assignments = await widget.db.eventPersonaMap();
         final learned = await widget.db.learnedTokensByPersona();
-        final now = DateTime.now();
-        final events = await widget.source
-            .eventsInRange(now, now.add(const Duration(days: 7)));
-        final calHours = calendarHoursByPersona(
-          events: events,
-          personas: widget.personas,
-          overrides: assignments,
-          hiddenEventIds: hidden,
-          kindByCalendarId: kinds,
-          learnedByPersona: learned,
-        );
-        calHours.forEach((pid, h) => combined[pid] = (combined[pid] ?? 0) + h);
+
+        Map<String, double> attribute(List<CalendarEvent> events) =>
+            calendarHoursByPersona(
+              events: events,
+              personas: widget.personas,
+              overrides: assignments,
+              hiddenEventIds: hidden,
+              kindByCalendarId: kinds,
+              learnedByPersona: learned,
+            );
+
+        // Upcoming calendar → current actual.
+        final upcoming =
+            await widget.source.eventsInRange(now, now.add(const Duration(days: 7)));
+        attribute(upcoming).forEach((pid, h) => actual[pid] = (actual[pid] ?? 0) + h);
+
+        // Past 14 days → split into recent / prior for the trend.
+        final past = await widget.source
+            .eventsInRange(now.subtract(const Duration(days: 14)), now);
+        final cutoff = now.subtract(const Duration(days: 7));
+        attribute(past.where((e) => !e.start.isBefore(cutoff)).toList())
+            .forEach((pid, h) => recent[pid] = (recent[pid] ?? 0) + h);
+        attribute(past.where((e) => e.start.isBefore(cutoff)).toList())
+            .forEach((pid, h) => prior[pid] = (prior[pid] ?? 0) + h);
       }
     } catch (_) {
-      // Calendar unavailable — fall back to task-only hours.
+      // Calendar unavailable — task-only hours/trends.
     }
-    return combined;
+
+    final trend = <String, TrendDirection>{};
+    for (final p in widget.personas) {
+      if (p.id == null) continue;
+      trend[p.id!] =
+          classifyTrend(recent[p.id] ?? 0, prior[p.id] ?? 0);
+    }
+    return _BalanceData(actual: actual, trend: trend);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Are your personas fed?')),
-      body: FutureBuilder<Map<String, double>>(
+      body: FutureBuilder<_BalanceData>(
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final actualByPersona = snap.data ?? const {};
+          final data = snap.data;
+          final actualByPersona = data?.actual ?? const {};
+          final trendByPersona = data?.trend ?? const {};
 
           // Attention-first: starving, then over-fed, fed, none.
           final rows = [
@@ -94,6 +133,11 @@ class _BalanceScreenState extends State<BalanceScreen> {
             final s = r.persona.fedState(r.actual);
             counts[s] = (counts[s] ?? 0) + 1;
           }
+          final fallingWhileLow = rows
+              .where((r) =>
+                  trendByPersona[r.persona.id] == TrendDirection.falling &&
+                  r.persona.fedState(r.actual) != FedState.overFed)
+              .length;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -102,12 +146,25 @@ class _BalanceScreenState extends State<BalanceScreen> {
               const SizedBox(height: 8),
               Text(
                 'Combines tasks completed in the last 7 days with calendar time '
-                'assigned to each persona over the next 7 days.',
+                'assigned to each persona over the next 7 days. The trend arrow '
+                'compares the last 7 days to the 7 before.',
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
+              if (fallingWhileLow > 0) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '↓ $fallingWhileLow persona${fallingWhileLow == 1 ? '' : 's'} '
+                  'getting less attention than before.',
+                  style: const TextStyle(
+                      color: Colors.orange, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ],
               const SizedBox(height: 8),
               for (final r in rows)
-                _BalanceRow(persona: r.persona, actual: r.actual),
+                _BalanceRow(
+                    persona: r.persona,
+                    actual: r.actual,
+                    trend: trendByPersona[r.persona.id] ?? TrendDirection.steady),
             ],
           );
         },
@@ -129,6 +186,12 @@ Color _colorFor(FedState s) => switch (s) {
       FedState.fed => Colors.green,
       FedState.noTarget => Colors.grey,
     };
+
+class _BalanceData {
+  _BalanceData({required this.actual, required this.trend});
+  final Map<String, double> actual;
+  final Map<String, TrendDirection> trend;
+}
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.counts});
@@ -173,10 +236,12 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _BalanceRow extends StatelessWidget {
-  const _BalanceRow({required this.persona, required this.actual});
+  const _BalanceRow(
+      {required this.persona, required this.actual, required this.trend});
 
   final Persona persona;
   final double actual;
+  final TrendDirection trend;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +260,19 @@ class _BalanceRow extends StatelessWidget {
               Text('${persona.emoji}  ${persona.name}',
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(width: 6),
+              Tooltip(
+                message: 'Attention ${trend.label} vs. the prior week',
+                child: Text(trend.arrow,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: switch (trend) {
+                          TrendDirection.rising => Colors.green,
+                          TrendDirection.falling => Colors.orange,
+                          TrendDirection.steady => Colors.grey,
+                        })),
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
