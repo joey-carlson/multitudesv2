@@ -86,8 +86,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   energy impact grouped by persona, calendar type, and time of day over the last
   2 weeks + week ahead — "what energizes vs. drains me."
 - **Habits + streaks (engagement)** — per-persona recurring habits with a daily
-  check-off and a 🔥 streak (Drift schema v9). Journaling, focus/notifications,
-  and a daily+shutdown ritual remain queued. analyze clean, 101 tests.
+  check-off and a 🔥 streak (Drift schema v9).
+- **Per-persona journaling (engagement)** — reflective entries tied to a persona
+  (Drift schema v10) with evidence-based prompts (gratitude, Best-Possible-Self,
+  values, WOOP if-then, self-distancing, brief expressive writing) and a
+  non-clinical safety note; write screen + recent-entries card. Focus/
+  notifications and a daily+shutdown ritual remain queued. analyze clean, 102 tests.
 - **Competitive analysis** (`docs/COMPETITIVE_ANALYSIS.md`) + depth/breadth
   improvement backlog with a recommended sequence recorded in `PARKING_LOT.md`.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
