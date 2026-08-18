@@ -7,6 +7,7 @@ import '../domain/calendar_event.dart';
 import '../domain/calendar_matcher.dart';
 import '../domain/persona.dart';
 import '../domain/persona_suggestions.dart';
+import '../domain/rebalance_suggestion.dart';
 import 'add_persona_screen.dart';
 
 /// Coaching insights (roadmap F5): suggests new personas the user seems to be
@@ -45,6 +46,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   Future<_Insights> _load() async {
     final unmatched = <CalendarEvent>[];
+    final rebalance = <RebalanceSuggestion>[];
     try {
       if (await widget.source.requestAccess()) {
         final calendars = await widget.source.listCalendars();
@@ -58,19 +60,41 @@ class _InsightsScreenState extends State<InsightsScreen> {
         final now = DateTime.now();
         final events = await widget.source
             .eventsInRange(now, now.add(const Duration(days: 7)));
+
+        final visible = <CalendarEvent>[];
         for (final e in events) {
           if (hidden.contains(e.id)) continue;
           final kind = e.calendarId == null
               ? CalendarKind.unset
               : (kinds[e.calendarId] ?? CalendarKind.unset);
           if (kind == CalendarKind.ignore) continue;
+          visible.add(e);
           final persona = effectivePersonaForEvent(e, widget.personas, overrides,
               eventKind: kind, learnedByPersona: learned);
           if (persona == null) unmatched.add(e);
         }
+
+        // Actual weekly hours (tasks + calendar) → who is starving.
+        final actual =
+            Map<String, double>.from(await widget.db.actualWeeklyHours(widget.userId));
+        final calHours = calendarHoursByPersona(
+          events: events,
+          personas: widget.personas,
+          overrides: overrides,
+          hiddenEventIds: hidden,
+          kindByCalendarId: kinds,
+          learnedByPersona: learned,
+        );
+        calHours.forEach((pid, h) => actual[pid] = (actual[pid] ?? 0) + h);
+        final starving = widget.personas
+            .where((p) =>
+                p.id != null && p.fedState(actual[p.id] ?? 0) == FedState.starving)
+            .toList();
+        rebalance.addAll(
+            suggestRebalance(starving: starving, events: visible, from: now));
       }
     } catch (_) {
-      // Calendar unavailable — archetype suggestions just won't have input.
+      // Calendar unavailable — calendar-derived suggestions just won't appear.
     }
 
     final archetypes = suggestNewArchetypes(
@@ -84,7 +108,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       if (s != null) peaks.add(s);
     }
 
-    return _Insights(archetypes: archetypes, peaks: peaks);
+    return _Insights(archetypes: archetypes, peaks: peaks, rebalance: rebalance);
   }
 
   Future<void> _addArchetype(PersonaArchetype a) async {
@@ -139,7 +163,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final data = snap.data!;
-          if (data.archetypes.isEmpty && data.peaks.isEmpty) {
+          if (data.archetypes.isEmpty &&
+              data.peaks.isEmpty &&
+              data.rebalance.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
@@ -164,6 +190,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 for (final p in data.peaks)
                   _PeakCard(p, onApply: () => _applyPeak(p)),
               ],
+              if (data.rebalance.isNotEmpty) ...[
+                const _SectionTitle('Feed a starving persona'),
+                for (final r in data.rebalance) _RebalanceCard(r),
+              ],
             ],
           );
         },
@@ -173,9 +203,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
 }
 
 class _Insights {
-  _Insights({required this.archetypes, required this.peaks});
+  _Insights({
+    required this.archetypes,
+    required this.peaks,
+    required this.rebalance,
+  });
   final List<ArchetypeSuggestion> archetypes;
   final List<PeakAdjustmentSuggestion> peaks;
+  final List<RebalanceSuggestion> rebalance;
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -219,6 +254,39 @@ class _ArchetypeCard extends StatelessWidget {
               'look like this — e.g. ${s.sampleTitles.join(", ")}.',
               style: TextStyle(color: Colors.grey[700]),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RebalanceCard extends StatelessWidget {
+  const _RebalanceCard(this.s);
+  final RebalanceSuggestion s;
+
+  @override
+  Widget build(BuildContext context) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    String two(int n) => n.toString().padLeft(2, '0');
+    final d = s.slotStart;
+    final when =
+        '${days[d.weekday - 1]} ${two(d.hour)}:${two(d.minute)}–${two(s.slotEnd.hour)}:${two(s.slotEnd.minute)}';
+    final acts = s.activities.isEmpty
+        ? 'something that recharges them'
+        : s.activities.join(', ');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${s.persona.emoji}  ${s.persona.name}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Free in their peak: $when. Try: $acts.',
+                style: TextStyle(color: Colors.grey[700])),
           ],
         ),
       ),
