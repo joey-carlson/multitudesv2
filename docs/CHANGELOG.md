@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Manually add personas** — create a new persona from a preset archetype
   (prefilled) or fully custom (name, emoji, energy window, weekly target) via a
   home FAB; persists to the existing store.
+- **Edit a persona** — from the detail screen, adjust the peak/recovery/trough
+  energy windows, name, emoji, primary energy, and weekly target; persists via
+  `updatePersona` and refreshes home/balance.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a
