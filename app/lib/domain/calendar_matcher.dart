@@ -111,6 +111,16 @@ Set<String> _tokens(String? text) {
 /// tokenization the matcher uses.
 Set<String> matchTokens(String? text) => _tokens(text);
 
+/// Whether an event's title/notes overlap a given archetype's keyword lexicon.
+/// Used to detect "gaps" — clusters of events matching an archetype the user
+/// has not yet added as a persona (roadmap F5).
+bool eventMatchesArchetype(CalendarEvent event, PersonaArchetype archetype) {
+  final lex = _archetypeLexicon[archetype];
+  if (lex == null) return false;
+  final tokens = {..._tokens(event.title), ..._tokens(event.notes)};
+  return lex.intersection(tokens).isNotEmpty;
+}
+
 Set<String> _personaKeywords(Persona p) => {
       ..._tokens(p.name),
       ..._tokens(p.primaryEnergy),

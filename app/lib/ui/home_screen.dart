@@ -6,6 +6,7 @@ import '../domain/persona.dart';
 import 'add_persona_screen.dart';
 import 'balance_screen.dart';
 import 'calendar_screen.dart';
+import 'insights_screen.dart';
 import 'persona_detail_screen.dart';
 
 /// Home: shows the user's personas, highlights who's at peak/trough right now,
@@ -31,6 +32,21 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Multitudes'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome),
+            tooltip: 'Insights',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => InsightsScreen(
+                  personas: personas,
+                  db: db,
+                  userId: userId,
+                  source: resolveCalendarSource(),
+                  onChanged: onRetake,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_today),
             tooltip: 'Calendar',

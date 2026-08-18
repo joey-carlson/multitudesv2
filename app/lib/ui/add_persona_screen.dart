@@ -6,10 +6,18 @@ import '../domain/persona.dart';
 /// Create a new persona — either from a preset archetype template (prefilled)
 /// or fully custom. Persists via the existing personas store.
 class AddPersonaScreen extends StatefulWidget {
-  const AddPersonaScreen({super.key, required this.db, required this.userId});
+  const AddPersonaScreen({
+    super.key,
+    required this.db,
+    required this.userId,
+    this.initialArchetype,
+  });
 
   final AppDatabase db;
   final String userId;
+
+  /// Preselects a template archetype (e.g. when opened from a suggestion).
+  final PersonaArchetype? initialArchetype;
 
   @override
   State<AddPersonaScreen> createState() => _AddPersonaScreenState();
@@ -17,7 +25,8 @@ class AddPersonaScreen extends StatefulWidget {
 
 class _AddPersonaScreenState extends State<AddPersonaScreen> {
   bool _custom = false;
-  PersonaArchetype _archetype = PersonaArchetype.professional;
+  late PersonaArchetype _archetype =
+      widget.initialArchetype ?? PersonaArchetype.professional;
 
   final _name = TextEditingController();
   final _emoji = TextEditingController();
