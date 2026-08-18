@@ -122,36 +122,27 @@ class HomeScreen extends StatelessWidget {
           },
         ),
       ),
-      body: FutureBuilder<Map<String, double>>(
-        future: db.actualWeeklyHours(userId),
-        builder: (context, snap) {
-          final actual = snap.data ?? const {};
-          final starving = personas
-              .where((p) =>
-                  p.fedState(actual[p.id] ?? 0) == FedState.starving)
-              .length;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (starving > 0) ...[
-                _StarvingBanner(
-                  count: starving,
-                  onTap: () => _openBalance(context),
-                ),
-                const SizedBox(height: 12),
-              ],
-              for (final p in personas) ...[
-                _PersonaCard(
-                    persona: p,
-                    now: now,
-                    db: db,
-                    userId: userId,
-                    onChanged: onRetake),
-                const SizedBox(height: 12),
-              ],
-            ],
-          );
-        },
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Self-contained loader so the banner's query runs once (not on every
+          // rebuild) and doesn't flicker the whole list.
+          _StarvingBannerLoader(
+            db: db,
+            userId: userId,
+            personas: personas,
+            onTap: () => _openBalance(context),
+          ),
+          for (final p in personas) ...[
+            _PersonaCard(
+                persona: p,
+                now: now,
+                db: db,
+                userId: userId,
+                onChanged: onRetake),
+            const SizedBox(height: 12),
+          ],
+        ],
       ),
     );
   }
@@ -166,6 +157,59 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Loads the starving-persona count once (in its own state) and shows the
+/// banner only when > 0. Recomputes when the personas list changes.
+class _StarvingBannerLoader extends StatefulWidget {
+  const _StarvingBannerLoader({
+    required this.db,
+    required this.userId,
+    required this.personas,
+    required this.onTap,
+  });
+
+  final AppDatabase db;
+  final String userId;
+  final List<Persona> personas;
+  final VoidCallback onTap;
+
+  @override
+  State<_StarvingBannerLoader> createState() => _StarvingBannerLoaderState();
+}
+
+class _StarvingBannerLoaderState extends State<_StarvingBannerLoader> {
+  late Future<int> _starving = _count();
+
+  Future<int> _count() async {
+    final actual = await widget.db.actualWeeklyHours(widget.userId);
+    return widget.personas
+        .where((p) => p.fedState(actual[p.id] ?? 0) == FedState.starving)
+        .length;
+  }
+
+  @override
+  void didUpdateWidget(_StarvingBannerLoader old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.personas, widget.personas)) {
+      _starving = _count();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: _starving,
+      builder: (context, snap) {
+        final n = snap.data ?? 0;
+        if (n == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _StarvingBanner(count: n, onTap: widget.onTap),
+        );
+      },
+    );
+  }
 }
 
 /// Home banner surfacing starving personas, tappable into the dashboard.

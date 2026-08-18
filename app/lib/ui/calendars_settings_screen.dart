@@ -31,15 +31,19 @@ class _CalendarsSettingsScreenState extends State<CalendarsSettingsScreen> {
   }
 
   Future<_Data> _load() async {
-    await widget.source.requestAccess();
-    final calendars = await widget.source.listCalendars();
-    final overrides = await widget.db.calendarKinds();
-    return _Data(calendars: calendars, overrides: overrides);
+    try {
+      await widget.source.requestAccess();
+      final calendars = await widget.source.listCalendars();
+      final overrides = await widget.db.calendarKinds();
+      return _Data(calendars: calendars, overrides: overrides);
+    } catch (_) {
+      return _Data(calendars: const [], overrides: const {});
+    }
   }
 
   Future<void> _set(CalendarInfo cal, CalendarKind kind) async {
     await widget.db.setCalendarKind(cal.id, kind);
-    setState(() => _future = _load());
+    if (mounted) setState(() => _future = _load());
   }
 
   @override
@@ -52,8 +56,8 @@ class _CalendarsSettingsScreenState extends State<CalendarsSettingsScreen> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final data = snap.data!;
-          if (data.calendars.isEmpty) {
+          final data = snap.data;
+          if (data == null || data.calendars.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),

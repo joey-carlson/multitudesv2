@@ -128,9 +128,11 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
         ],
       ),
     );
-    if (ok == true && controller.text.trim().isNotEmpty) {
-      await widget.db.addHabit(Habit(
-          userId: widget.userId, personaId: id, title: controller.text.trim()));
+    final title = controller.text.trim();
+    controller.dispose();
+    if (ok == true && title.isNotEmpty) {
+      await widget.db
+          .addHabit(Habit(userId: widget.userId, personaId: id, title: title));
       if (mounted) setState(_loadHabits);
     }
   }
@@ -224,11 +226,13 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
       ),
     );
 
-    if (created == true && titleController.text.trim().isNotEmpty) {
+    final title = titleController.text.trim();
+    titleController.dispose();
+    if (created == true && title.isNotEmpty) {
       await widget.db.addTask(Task(
         userId: widget.userId,
         personaId: id,
-        title: titleController.text.trim(),
+        title: title,
         energyRequired: energy.round(),
         estimatedMinutes: minutes.round(),
       ));

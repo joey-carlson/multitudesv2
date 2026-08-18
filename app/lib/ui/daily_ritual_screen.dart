@@ -45,6 +45,7 @@ class _DailyRitualScreenState extends State<DailyRitualScreen> {
 
   Future<void> _load() async {
     final log = await widget.db.dayLog(DateTime.now());
+    if (!mounted) return; // don't touch disposed controllers
     if (log != null) {
       _intention.text = log.intention ?? '';
       _reflection.text = log.reflection ?? '';
@@ -53,7 +54,7 @@ class _DailyRitualScreenState extends State<DailyRitualScreen> {
             (jsonDecode(log.intendedPersonaIds!) as List).cast<String>());
       }
     }
-    if (mounted) setState(() => _loading = false);
+    setState(() => _loading = false);
   }
 
   Future<void> _save() async {

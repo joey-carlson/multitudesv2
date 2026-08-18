@@ -63,7 +63,11 @@ class _AddPersonaScreenState extends State<AddPersonaScreen> {
   static TimeOfDay? _parse(String? hhmm) {
     if (hhmm == null) return null;
     final p = hhmm.split(':');
-    return TimeOfDay(hour: int.parse(p[0]), minute: int.parse(p[1]));
+    if (p.length != 2) return null;
+    final h = int.tryParse(p[0]);
+    final m = int.tryParse(p[1]);
+    if (h == null || m == null) return null;
+    return TimeOfDay(hour: h, minute: m);
   }
 
   static String? _fmt(TimeOfDay? t) => t == null

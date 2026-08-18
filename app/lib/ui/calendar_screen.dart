@@ -50,17 +50,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final granted = await widget.source.requestAccess();
-    if (!granted) {
-      if (mounted) {
-        setState(() {
-          _granted = false;
-          _loading = false;
-        });
+    try {
+      final granted = await widget.source.requestAccess();
+      if (!granted) {
+        if (mounted) {
+          setState(() {
+            _granted = false;
+            _loading = false;
+          });
+        }
+        return;
       }
-      return;
+      await _loadGranted();
+    } catch (_) {
+      // Don't leave the screen stuck on a spinner if the calendar throws.
+      if (mounted) setState(() => _loading = false);
     }
+  }
 
+  Future<void> _loadGranted() async {
     final calendars = await widget.source.listCalendars();
     final kindOverrides = await widget.db.calendarKinds();
     final kinds = {

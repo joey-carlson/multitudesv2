@@ -101,11 +101,15 @@ class _InsightsScreenState extends State<InsightsScreen> {
         personas: widget.personas, unmatchedEvents: unmatched);
 
     final peaks = <PeakAdjustmentSuggestion>[];
-    for (final p in widget.personas) {
-      if (p.id == null) continue;
-      final readings = await widget.db.recentReadings(p.id!, limit: 200);
-      final s = suggestPeakAdjustment(p, readings);
-      if (s != null) peaks.add(s);
+    try {
+      for (final p in widget.personas) {
+        if (p.id == null) continue;
+        final readings = await widget.db.recentReadings(p.id!, limit: 200);
+        final s = suggestPeakAdjustment(p, readings);
+        if (s != null) peaks.add(s);
+      }
+    } catch (_) {
+      // Reading history unavailable — skip peak suggestions rather than fail.
     }
 
     return _Insights(archetypes: archetypes, peaks: peaks, rebalance: rebalance);
@@ -162,10 +166,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final data = snap.data!;
-          if (data.archetypes.isEmpty &&
-              data.peaks.isEmpty &&
-              data.rebalance.isEmpty) {
+          final data = snap.data;
+          if (data == null ||
+              (data.archetypes.isEmpty &&
+                  data.peaks.isEmpty &&
+                  data.rebalance.isEmpty)) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
