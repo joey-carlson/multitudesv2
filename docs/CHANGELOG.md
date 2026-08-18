@@ -60,6 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Edit a persona** — from the detail screen, adjust the peak/recovery/trough
   energy windows, name, emoji, primary energy, and weekly target; persists via
   `updatePersona` and refreshes home/balance.
+- **Timing suggestions (roadmap F2)** — events scheduled in a persona's trough
+  or off-peak surface a suggestion to move to the persona's peak window: an
+  inline hint on the calendar card plus a Suggestions screen (lightbulb, with a
+  count badge) aggregating the week. Non-destructive. analyze clean, 73 tests.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a

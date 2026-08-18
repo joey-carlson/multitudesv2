@@ -135,8 +135,10 @@ nothing on a real calendar" problem for common titles.
 matcher (token→persona, weighted); learned tokens create matches and outweigh
 weak lexicon hits. This is the groundwork for F5 (suggest personas/adjustments).
 
-**F2 (timing suggestions)** can now be built on top of this matching, though
-learn-from-corrections would strengthen it further first.
+**F2 (timing suggestions): DONE (2026-08-17)** — events scheduled in a
+persona's trough (or off-peak) surface a suggestion to move to the persona's
+peak window (inline hint + a Suggestions screen). Non-destructive; two-way
+calendar write-back remains deferred.
 
 ### Outlook / external calendars
 
