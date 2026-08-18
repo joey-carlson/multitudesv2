@@ -99,7 +99,12 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 12),
               ],
               for (final p in personas) ...[
-                _PersonaCard(persona: p, now: now, db: db, userId: userId),
+                _PersonaCard(
+                    persona: p,
+                    now: now,
+                    db: db,
+                    userId: userId,
+                    onChanged: onRetake),
                 const SizedBox(height: 12),
               ],
             ],
@@ -149,12 +154,14 @@ class _PersonaCard extends StatelessWidget {
     required this.now,
     required this.db,
     required this.userId,
+    this.onChanged,
   });
 
   final Persona persona;
   final DateTime now;
   final AppDatabase db;
   final String userId;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -167,8 +174,11 @@ class _PersonaCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-              PersonaDetailScreen(persona: persona, db: db, userId: userId),
+            builder: (_) => PersonaDetailScreen(
+                persona: persona,
+                db: db,
+                userId: userId,
+                onChanged: onChanged),
           ),
         ),
         child: Padding(

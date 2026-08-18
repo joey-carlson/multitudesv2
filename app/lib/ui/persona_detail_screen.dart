@@ -4,6 +4,7 @@ import '../data/database.dart';
 import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
+import 'edit_persona_screen.dart';
 
 /// Full detail for one persona: energy windows, current state, the rich
 /// attributes the generator produced, energy check-ins, and tasks.
@@ -13,18 +14,22 @@ class PersonaDetailScreen extends StatefulWidget {
     required this.persona,
     required this.db,
     required this.userId,
+    this.onChanged,
   });
 
   final Persona persona;
   final AppDatabase db;
   final String userId;
 
+  /// Called after the persona is edited, so callers can refresh their lists.
+  final VoidCallback? onChanged;
+
   @override
   State<PersonaDetailScreen> createState() => _PersonaDetailScreenState();
 }
 
 class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
-  Persona get _persona => widget.persona;
+  late Persona _persona = widget.persona;
   double _level = 5;
   late Future<List<EnergyReading>> _readings;
   late Future<List<Task>> _tasks;
@@ -34,6 +39,18 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
     super.initState();
     _loadReadings();
     _loadTasks();
+  }
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<Persona>(
+      MaterialPageRoute(
+        builder: (_) => EditPersonaScreen(db: widget.db, persona: _persona),
+      ),
+    );
+    if (updated != null) {
+      setState(() => _persona = updated);
+      widget.onChanged?.call();
+    }
   }
 
   void _loadReadings() {
@@ -142,7 +159,17 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
   Widget build(BuildContext context) {
     final state = _persona.energyStateAt(DateTime.now());
     return Scaffold(
-      appBar: AppBar(title: Text('${_persona.emoji}  ${_persona.name}')),
+      appBar: AppBar(
+        title: Text('${_persona.emoji}  ${_persona.name}'),
+        actions: [
+          if (_persona.id != null)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit persona',
+              onPressed: _edit,
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

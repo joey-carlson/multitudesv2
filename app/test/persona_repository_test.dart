@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:multitudes/data/database.dart';
 import 'package:multitudes/domain/calendar_classification.dart';
 import 'package:multitudes/domain/energy_reading.dart';
+import 'package:multitudes/domain/persona.dart';
 import 'package:multitudes/domain/persona_generator.dart';
 import 'package:multitudes/domain/task.dart';
 
@@ -44,6 +45,38 @@ void main() {
     expect(emma.troughStartTime, '12:00');
     expect(emma.idealWeeklyHours, 40.0);
     expect(emma.strengths, isNotEmpty); // JSON list round-tripped
+  });
+
+  test('updatePersona changes editable fields and energy windows', () async {
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🧠 The Professional'],
+      'overall_energy_pattern': 'Early morning (7am-9am) - Pre-business hours',
+    }));
+    final p = (await db.activePersonas('u1')).single;
+    expect(p.peakStartTime, '07:00');
+
+    await db.updatePersona(Persona(
+      id: p.id,
+      userId: p.userId,
+      name: 'Renamed',
+      emoji: p.emoji,
+      archetype: p.archetype,
+      primaryEnergy: p.primaryEnergy,
+      strengths: p.strengths,
+      weaknesses: p.weaknesses,
+      triggerConditions: p.triggerConditions,
+      idealTasks: p.idealTasks,
+      peakStartTime: '10:00',
+      peakEndTime: '13:00',
+      idealWeeklyHours: 20,
+    ));
+
+    final updated = (await db.activePersonas('u1')).single;
+    expect(updated.name, 'Renamed');
+    expect(updated.peakStartTime, '10:00');
+    expect(updated.peakEndTime, '13:00');
+    expect(updated.idealWeeklyHours, 20);
+    expect(updated.id, p.id); // same row
   });
 
   test('activePersonas isolates by user', () async {

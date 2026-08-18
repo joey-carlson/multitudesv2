@@ -291,6 +291,25 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Update an existing persona's editable fields (identified by id).
+  Future<void> updatePersona(Persona p) async {
+    await (update(personas)..where((t) => t.id.equals(p.id!))).write(
+      PersonasCompanion(
+        name: Value(p.name),
+        emoji: Value(p.emoji),
+        primaryEnergy: Value(p.primaryEnergy),
+        peakStartTime: Value(p.peakStartTime),
+        peakEndTime: Value(p.peakEndTime),
+        troughStartTime: Value(p.troughStartTime),
+        troughEndTime: Value(p.troughEndTime),
+        recoveryStartTime: Value(p.recoveryStartTime),
+        recoveryEndTime: Value(p.recoveryEndTime),
+        idealWeeklyHours: Value(p.idealWeeklyHours),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Active personas for a user, oldest first.
   Future<List<Persona>> activePersonas(String userId) async {
     final rows = await (select(personas)
