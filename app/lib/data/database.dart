@@ -229,8 +229,17 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        // SQLite ignores ON DELETE CASCADE unless foreign keys are enabled
+        // per-connection, so turn them on before any queries run.
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // NOTE: onUpgrade only ever creates NEW tables. If you ever add a
+          // column to an EXISTING table, bump schemaVersion and add an
+          // `m.addColumn(...)` step here — otherwise upgraded DBs will diverge
+          // from a fresh createAll and crash on the missing column.
           // Create whichever tables the existing database predates.
           if (from < 2) await m.createTable(energyReadings);
           if (from < 3) await m.createTable(tasks);
@@ -444,17 +453,24 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Persist generated personas. IDs are client-generated (offline-safe).
+  /// Idempotent: re-saving a persona that already has an id upserts rather than
+  /// throwing on a primary-key conflict (safe for re-import / sync replay).
   Future<void> savePersonas(List<Persona> personas) async {
     await batch((b) {
       for (final p in personas) {
-        b.insert(this.personas, _toCompanion(p));
+        b.insert(this.personas, _toCompanion(p),
+            mode: InsertMode.insertOrReplace);
       }
     });
   }
 
   /// Update an existing persona's editable fields (identified by id).
   Future<void> updatePersona(Persona p) async {
-    await (update(personas)..where((t) => t.id.equals(p.id!))).write(
+    final id = p.id;
+    if (id == null) {
+      throw ArgumentError('updatePersona requires a persona with an id');
+    }
+    await (update(personas)..where((t) => t.id.equals(id))).write(
       PersonasCompanion(
         name: Value(p.name),
         emoji: Value(p.emoji),

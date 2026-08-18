@@ -153,15 +153,24 @@ class DeviceCalendarSource implements CalendarSource {
   Future<List<CalendarInfo>> listCalendars() async {
     try {
       final raw = await _channel.invokeMethod<List<dynamic>>('listCalendars');
-      return (raw ?? const []).map((item) {
-        final m = (item as Map).cast<String, dynamic>();
-        return CalendarInfo(
-          id: m['id'] as String,
-          title: (m['title'] as String?) ?? '(untitled)',
-          account: m['account'] as String?,
-          type: m['type'] as String?,
-        );
-      }).toList();
+      final out = <CalendarInfo>[];
+      for (final item in raw ?? const []) {
+        // Skip a malformed item rather than dropping the whole list.
+        try {
+          final m = (item as Map).cast<String, dynamic>();
+          final id = m['id'] as String?;
+          if (id == null) continue;
+          out.add(CalendarInfo(
+            id: id,
+            title: (m['title'] as String?) ?? '(untitled)',
+            account: m['account'] as String?,
+            type: m['type'] as String?,
+          ));
+        } catch (_) {
+          continue;
+        }
+      }
+      return out;
     } catch (_) {
       return const [];
     }
@@ -174,21 +183,31 @@ class DeviceCalendarSource implements CalendarSource {
         'startMs': start.millisecondsSinceEpoch,
         'endMs': end.millisecondsSinceEpoch,
       });
-      return (raw ?? const []).map((item) {
-        final m = (item as Map).cast<String, dynamic>();
-        return CalendarEvent(
-          id: m['id'] as String,
-          title: (m['title'] as String?)?.isNotEmpty == true
-              ? m['title'] as String
-              : '(untitled)',
-          notes: m['notes'] as String?,
-          start: DateTime.fromMillisecondsSinceEpoch(m['startMs'] as int),
-          end: DateTime.fromMillisecondsSinceEpoch(m['endMs'] as int),
-          allDay: (m['allDay'] as bool?) ?? false,
-          calendarName: m['calendar'] as String?,
-          calendarId: m['calendarId'] as String?,
-        );
-      }).toList();
+      final out = <CalendarEvent>[];
+      for (final item in raw ?? const []) {
+        // One malformed event (missing id/times) shouldn't blank the calendar.
+        try {
+          final m = (item as Map).cast<String, dynamic>();
+          final id = m['id'] as String?;
+          final startMs = m['startMs'] as int?;
+          final endMs = m['endMs'] as int?;
+          if (id == null || startMs == null || endMs == null) continue;
+          final title = m['title'] as String?;
+          out.add(CalendarEvent(
+            id: id,
+            title: (title != null && title.isNotEmpty) ? title : '(untitled)',
+            notes: m['notes'] as String?,
+            start: DateTime.fromMillisecondsSinceEpoch(startMs),
+            end: DateTime.fromMillisecondsSinceEpoch(endMs),
+            allDay: (m['allDay'] as bool?) ?? false,
+            calendarName: m['calendar'] as String?,
+            calendarId: m['calendarId'] as String?,
+          ));
+        } catch (_) {
+          continue;
+        }
+      }
+      return out;
     } catch (_) {
       return const [];
     }
