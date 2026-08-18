@@ -118,20 +118,23 @@ than inventing a scheme.
   net-draining stretches; protect energizing blocks; suggest recovery when
   draining events cluster (ties to F4 rebalancing and F5 learning).
 
-### Deferred: persona-matching improvements (F1/F2 dependency)
+### Persona-matching improvements (partially DONE)
 
-The initial event→persona matcher is keyword-overlap only and matched **nothing**
-on a real personal calendar (event titles rarely contain persona keywords).
-Improve matching before building F2, so suggestions are worth acting on. Ideas:
-- Expand persona keyword sets with synonyms/related terms; weight by field.
-- Use more event signals: attendees, location, calendar (work vs. personal),
-  all-day vs. timed, recurrence, time-of-day.
-- Manual event→persona tagging, and learn from corrections (ties to F5).
-- Optional semantic/LLM classification (online-enrichment layer, Decision C).
-- Work/personal calendar context (below) as a strong prior.
+**Done (2026-08-17):** per-archetype keyword **lexicons** + composite scoring
+with a **time-of-day prior** and a **work/personal domain prior**; manual
+event→persona assignment (override) already shipped. This fixed the "matched
+nothing on a real calendar" problem for common titles.
 
-**F2 (timing suggestions) is DEFERRED** until matching is good enough — building
-suggestions atop weak matches would mean rework.
+**Still deferred:**
+- More event signals: attendees, location, all-day vs. timed, recurrence.
+- **Learn from the user's manual assignments/corrections** (ties to F5) — e.g.
+  remember that "Book club" → a given persona.
+- Optional **semantic/LLM classification** (online-enrichment layer, Decision C)
+  for titles with no lexicon overlap (e.g. "Sync w/ Dana").
+- User-editable lexicons / per-persona keywords.
+
+**F2 (timing suggestions)** can now be built on top of this matching, though
+learn-from-corrections would strengthen it further first.
 
 ### Outlook / external calendars
 

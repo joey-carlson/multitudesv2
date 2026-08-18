@@ -61,7 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a
   picker, shown as a tappable chip and summed into a "net energy" readout
-  (Drift schema v7). analyze clean, 61 tests.
+  (Drift schema v7).
+- **Improved persona↔event matching** — added per-archetype keyword lexicons
+  and a composite score (keyword overlap + time-of-day prior + work/personal
+  domain prior) so auto-match fires on real calendar titles, not just events
+  containing a persona's own words. analyze clean, 64 tests.
 - **Design note** (`PARKING_LOT.md`): energizing-vs-draining activities grounded
   in existing research (Russell's circumplex valence/arousal, SDT subjective
   vitality, Mood Meter) with a heuristics-first design — rather than inventing.
