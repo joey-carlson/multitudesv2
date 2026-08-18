@@ -88,6 +88,11 @@ daily+shutdown ritual, (3) habits, (4) journaling — and the one high-value
 boundary-crosser done carefully: BREADTH (1) calendar write-back with
 preview/approve.
 
+**Progress (2026-08-18):** DONE — balance trends & decay; local energy
+forecasting; correlation analytics (Patterns screen); habits + streaks.
+REMAINING engagement layer — focus/notifications (native, needs permission),
+daily+shutdown ritual, per-persona journaling; then calendar write-back.
+
 **F5 — Adaptive learning over time.**
 - Use accumulated `energy_readings` + task/calendar actuals to detect that a
   persona's real peak differs from the survey answer (suggest adjusting the

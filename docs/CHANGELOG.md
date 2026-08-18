@@ -81,7 +81,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Local energy forecasting (depth)** — a persona's detail screen shows an
   "Observed energy pattern": average energy by hour-of-day from its own
   check-ins, highlighting the forecast peak/trough hours (hourly bar chart).
-  On-device, appears once there are enough check-ins. analyze clean, 91 tests.
+  On-device, appears once there are enough check-ins.
+- **Correlation analytics (depth)** — a Patterns screen (home 📊) shows average
+  energy impact grouped by persona, calendar type, and time of day over the last
+  2 weeks + week ahead — "what energizes vs. drains me."
+- **Habits + streaks (engagement)** — per-persona recurring habits with a daily
+  check-off and a 🔥 streak (Drift schema v9). Journaling, focus/notifications,
+  and a daily+shutdown ritual remain queued. analyze clean, 101 tests.
 - **Competitive analysis** (`docs/COMPETITIVE_ANALYSIS.md`) + depth/breadth
   improvement backlog with a recommended sequence recorded in `PARKING_LOT.md`.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
