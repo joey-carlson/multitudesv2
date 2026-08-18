@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../domain/energy_profile.dart';
 import '../domain/energy_reading.dart';
+import '../domain/habit.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
 import 'edit_persona_screen.dart';
@@ -34,12 +35,57 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
   double _level = 5;
   late Future<List<EnergyReading>> _readings;
   late Future<List<Task>> _tasks;
+  late Future<List<(Habit, Set<DateTime>)>> _habits;
 
   @override
   void initState() {
     super.initState();
     _loadReadings();
     _loadTasks();
+    _loadHabits();
+  }
+
+  void _loadHabits() {
+    final id = _persona.id;
+    _habits = id == null
+        ? Future.value(const [])
+        : widget.db.habitsWithCompletions(id);
+  }
+
+  Future<void> _toggleHabit(String habitId, bool done) async {
+    await widget.db.setHabitDone(habitId, DateTime.now(), done);
+    if (mounted) setState(_loadHabits);
+  }
+
+  Future<void> _addHabitDialog() async {
+    final id = _persona.id;
+    if (id == null) return;
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('New habit for ${_persona.name}'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+              labelText: 'Habit', hintText: 'e.g. 20-minute sketch'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Add')),
+        ],
+      ),
+    );
+    if (ok == true && controller.text.trim().isNotEmpty) {
+      await widget.db.addHabit(Habit(
+          userId: widget.userId, personaId: id, title: controller.text.trim()));
+      if (mounted) setState(_loadHabits);
+    }
   }
 
   Future<void> _edit() async {
@@ -199,6 +245,8 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
           const SizedBox(height: 20),
           _tasksCard(),
           const SizedBox(height: 20),
+          _habitsCard(),
+          const SizedBox(height: 20),
           _checkInCard(),
           const SizedBox(height: 20),
           _energyProfileCard(),
@@ -267,6 +315,60 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
                           ),
                           subtitle: Text(
                               '⚡${t.energyRequired}/5 · ${t.estimatedMinutes} min'),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _habitsCard() => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text('Habits',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                  TextButton.icon(
+                    onPressed: _persona.id == null ? null : _addHabitDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+              FutureBuilder<List<(Habit, Set<DateTime>)>>(
+                future: _habits,
+                builder: (context, snap) {
+                  final habits = snap.data ?? const [];
+                  if (habits.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No habits yet. Add one to build a streak.',
+                          style: TextStyle(color: Colors.grey)),
+                    );
+                  }
+                  final now = DateTime.now();
+                  return Column(
+                    children: [
+                      for (final (habit, days) in habits)
+                        CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: doneToday(days, today: now),
+                          onChanged: (v) => _toggleHabit(habit.id!, v ?? false),
+                          title: Text(habit.title),
+                          secondary: _StreakBadge(
+                              streak: currentStreak(days, today: now)),
                         ),
                     ],
                   );
@@ -432,6 +534,20 @@ class _HourlyEnergyChart extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _StreakBadge extends StatelessWidget {
+  const _StreakBadge({required this.streak});
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    if (streak == 0) {
+      return const Text('—', style: TextStyle(color: Colors.grey));
+    }
+    return Text('🔥 $streak',
+        style: const TextStyle(fontWeight: FontWeight.w600));
   }
 }
 

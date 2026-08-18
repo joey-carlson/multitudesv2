@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:multitudes/data/database.dart';
 import 'package:multitudes/domain/calendar_classification.dart';
 import 'package:multitudes/domain/energy_reading.dart';
+import 'package:multitudes/domain/habit.dart';
 import 'package:multitudes/domain/persona.dart';
 import 'package:multitudes/domain/persona_generator.dart';
 import 'package:multitudes/domain/task.dart';
@@ -216,6 +217,27 @@ void main() {
 
     await db.setEventEnergyImpact('evt-1', null); // clear
     expect((await db.energyImpactMap()).containsKey('evt-1'), isFalse);
+  });
+
+  test('habits: add, complete a day, and read back completions', () async {
+    await db.savePersonas(generatePersonasFromSurvey('u1', {
+      'archetypes_selection': ['🎨 The Artist'],
+    }));
+    final pid = (await db.activePersonas('u1')).single.id!;
+
+    await db.addHabit(Habit(userId: 'u1', personaId: pid, title: 'Sketch'));
+    var habits = await db.habitsWithCompletions(pid);
+    expect(habits.length, 1);
+    expect(habits.single.$2, isEmpty); // no completions yet
+
+    final habitId = habits.single.$1.id!;
+    await db.setHabitDone(habitId, DateTime(2026, 1, 10), true);
+    habits = await db.habitsWithCompletions(pid);
+    expect(habits.single.$2, {DateTime(2026, 1, 10)});
+
+    await db.setHabitDone(habitId, DateTime(2026, 1, 10), false); // uncheck
+    habits = await db.habitsWithCompletions(pid);
+    expect(habits.single.$2, isEmpty);
   });
 
   test('learned associations: record tokens, read back, accumulate weight',

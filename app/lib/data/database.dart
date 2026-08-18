@@ -12,6 +12,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import '../domain/calendar_classification.dart';
 import '../domain/energy_reading.dart';
+import '../domain/habit.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
 
@@ -151,6 +152,31 @@ class LearnedAssociations extends Table {
   Set<Column> get primaryKey => {token, personaId};
 }
 
+/// A recurring habit that nourishes a persona.
+@DataClassName('HabitRow')
+class Habits extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get personaId =>
+      text().references(Personas, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A per-day completion of a habit (date-only).
+@DataClassName('HabitCompletionRow')
+class HabitCompletions extends Table {
+  TextColumn get habitId =>
+      text().references(Habits, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get day => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {habitId, day};
+}
+
 @DriftDatabase(tables: [
   Personas,
   EnergyReadings,
@@ -160,13 +186,15 @@ class LearnedAssociations extends Table {
   EventPersonaOverrides,
   EventEnergyImpacts,
   LearnedAssociations,
+  Habits,
+  HabitCompletions,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -180,8 +208,61 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) await m.createTable(eventPersonaOverrides);
           if (from < 7) await m.createTable(eventEnergyImpacts);
           if (from < 8) await m.createTable(learnedAssociations);
+          if (from < 9) {
+            await m.createTable(habits);
+            await m.createTable(habitCompletions);
+          }
         },
       );
+
+  /// Add a habit.
+  Future<void> addHabit(Habit h) async {
+    await into(habits).insert(HabitsCompanion.insert(
+      id: _newId(),
+      userId: h.userId,
+      personaId: h.personaId,
+      title: h.title,
+      createdAt: Value(h.createdAt),
+    ));
+  }
+
+  /// Habits for a persona, each with the set of days it was completed.
+  Future<List<(Habit, Set<DateTime>)>> habitsWithCompletions(
+      String personaId) async {
+    final rows = await (select(habits)
+          ..where((t) => t.personaId.equals(personaId))
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+    final out = <(Habit, Set<DateTime>)>[];
+    for (final r in rows) {
+      final comps = await (select(habitCompletions)
+            ..where((t) => t.habitId.equals(r.id)))
+          .get();
+      out.add((
+        Habit(
+            id: r.id,
+            userId: r.userId,
+            personaId: r.personaId,
+            title: r.title,
+            createdAt: r.createdAt),
+        comps.map((c) => c.day).toSet(),
+      ));
+    }
+    return out;
+  }
+
+  /// Check/uncheck a habit for a given [day] (stored date-only).
+  Future<void> setHabitDone(String habitId, DateTime day, bool done) async {
+    final d = DateTime(day.year, day.month, day.day);
+    if (done) {
+      await into(habitCompletions).insertOnConflictUpdate(
+          HabitCompletionsCompanion.insert(habitId: habitId, day: d));
+    } else {
+      await (delete(habitCompletions)
+            ..where((t) => t.habitId.equals(habitId) & t.day.equals(d)))
+          .go();
+    }
+  }
 
   /// Accumulate learned associations: bump each token→persona weight by 1.
   Future<void> recordAssignmentTokens(
