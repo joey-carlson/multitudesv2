@@ -107,6 +107,10 @@ Set<String> _tokens(String? text) {
       .toSet();
 }
 
+/// Public tokenizer, so learned associations are recorded with the same
+/// tokenization the matcher uses.
+Set<String> matchTokens(String? text) => _tokens(text);
+
 Set<String> _personaKeywords(Persona p) => {
       ..._tokens(p.name),
       ..._tokens(p.primaryEnergy),
@@ -115,24 +119,33 @@ Set<String> _personaKeywords(Persona p) => {
       ...?_archetypeLexicon[p.archetype],
     };
 
+/// Weight applied to learned (user-taught) token matches — higher than lexicon
+/// matches because they are explicit user signal.
+const double _learnedWeight = 2.0;
+
 /// Rank personas by fit for [event]; strongest first. A persona must share at
-/// least one keyword to be a candidate; time-of-day and domain priors then
-/// refine the ranking. [eventKind] is the event's calendar classification
-/// (work/personal), used for the domain prior. Ties broken by name.
+/// least one keyword (lexicon/own words or a learned token) to be a candidate;
+/// time-of-day and domain priors then refine the ranking. [eventKind] is the
+/// event's calendar classification (work/personal), used for the domain prior.
+/// [learnedByPersona] maps persona id → tokens taught by prior manual
+/// assignments. Ties broken by name.
 List<PersonaMatch> rankPersonasForEvent(
   CalendarEvent event,
   List<Persona> personas, {
   CalendarKind eventKind = CalendarKind.unset,
+  Map<String, Set<String>> learnedByPersona = const {},
 }) {
   final eventTokens = {..._tokens(event.title), ..._tokens(event.notes)};
 
   final matches = <PersonaMatch>[];
   for (final p in personas) {
     final overlap = _personaKeywords(p).intersection(eventTokens).length;
-    if (overlap == 0) continue;
+    final learned = learnedByPersona[p.id] ?? const <String>{};
+    final learnedOverlap = learned.intersection(eventTokens).length;
+    if (overlap == 0 && learnedOverlap == 0) continue;
 
     final state = p.energyStateAt(event.start);
-    var score = overlap.toDouble();
+    var score = overlap.toDouble() + learnedOverlap * _learnedWeight;
 
     // Time-of-day prior: activity aligned with the persona's strong hours fits.
     score += switch (state) {
@@ -166,6 +179,7 @@ Persona? effectivePersonaForEvent(
   List<Persona> personas,
   Map<String, String> overrides, {
   CalendarKind eventKind = CalendarKind.unset,
+  Map<String, Set<String>> learnedByPersona = const {},
 }) {
   final overrideId = overrides[event.id];
   if (overrideId != null) {
@@ -173,7 +187,8 @@ Persona? effectivePersonaForEvent(
       if (p.id == overrideId) return p;
     }
   }
-  final matches = rankPersonasForEvent(event, personas, eventKind: eventKind);
+  final matches = rankPersonasForEvent(event, personas,
+      eventKind: eventKind, learnedByPersona: learnedByPersona);
   return matches.isEmpty ? null : matches.first.persona;
 }
 
@@ -186,6 +201,7 @@ Map<String, double> calendarHoursByPersona({
   required Map<String, String> overrides,
   required Set<String> hiddenEventIds,
   required Map<String, CalendarKind> kindByCalendarId,
+  Map<String, Set<String>> learnedByPersona = const {},
 }) {
   final hours = <String, double>{};
   for (final e in events) {
@@ -195,8 +211,8 @@ Map<String, double> calendarHoursByPersona({
         : (kindByCalendarId[e.calendarId] ?? CalendarKind.unset);
     if (kind == CalendarKind.ignore) continue;
 
-    final persona =
-        effectivePersonaForEvent(e, personas, overrides, eventKind: kind);
+    final persona = effectivePersonaForEvent(e, personas, overrides,
+        eventKind: kind, learnedByPersona: learnedByPersona);
     final pid = persona?.id;
     if (pid == null) continue;
     hours[pid] = (hours[pid] ?? 0) + e.duration.inMinutes / 60.0;

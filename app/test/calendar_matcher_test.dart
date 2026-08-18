@@ -158,4 +158,33 @@ void main() {
       expect(m.first.persona.archetype, PersonaArchetype.professional);
     });
   });
+
+  group('learn-from-corrections', () {
+    final personas = [
+      pid('pa', PersonaArchetype.professional, const []),
+      pid('pb', PersonaArchetype.artist, const []),
+    ];
+
+    test('learned tokens create a match where none existed', () {
+      final e = _event('Book club'); // no lexicon/own-word overlap
+      expect(rankPersonasForEvent(e, personas), isEmpty);
+
+      final matches = rankPersonasForEvent(e, personas,
+          learnedByPersona: {
+            'pb': {'book', 'club'}
+          });
+      expect(matches.first.persona.id, 'pb');
+    });
+
+    test('learned signal outweighs a weak lexicon match', () {
+      // "review" hits professional's lexicon (score ~1); artist has "review"
+      // learned (2 per token) → artist should win.
+      final e = _event('Weekly review');
+      final matches = rankPersonasForEvent(e, personas,
+          learnedByPersona: {
+            'pb': {'review', 'weekly'}
+          });
+      expect(matches.first.persona.id, 'pb');
+    });
+  });
 }

@@ -38,6 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   final Set<String> _hidden = {};
   final Map<String, String> _overrides = {}; // eventId -> personaId
   final Map<String, int> _impacts = {}; // eventId -> energy impact (-2..2)
+  final Map<String, Set<String>> _learned = {}; // personaId -> learned tokens
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final hidden = await widget.db.hiddenEventIds();
     final personaOverrides = await widget.db.eventPersonaMap();
     final impacts = await widget.db.energyImpactMap();
+    final learned = await widget.db.learnedTokensByPersona();
     final now = DateTime.now();
     final events = await widget.source
         .eventsInRange(now, now.add(const Duration(days: 7)));
@@ -84,6 +86,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _impacts
         ..clear()
         ..addAll(impacts);
+      _learned
+        ..clear()
+        ..addAll(learned);
       _loading = false;
     });
   }
@@ -95,14 +100,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _setPersona(CalendarEvent e, String? personaId) async {
+    // Learn from the assignment: associate the event's title/notes tokens with
+    // the chosen persona so similar future events auto-match.
+    final tokens = {...matchTokens(e.title), ...matchTokens(e.notes)};
     setState(() {
       if (personaId == null) {
         _overrides.remove(e.id);
       } else {
         _overrides[e.id] = personaId;
+        if (tokens.isNotEmpty) (_learned[personaId] ??= {}).addAll(tokens);
       }
     });
     await widget.db.setEventPersona(e.id, personaId);
+    if (personaId != null) {
+      await widget.db.recordAssignmentTokens(personaId, tokens);
+    }
   }
 
   Future<void> _setImpact(CalendarEvent e, int? value) async {
@@ -236,7 +248,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     Persona? personaOf(CalendarEvent e) => effectivePersonaForEvent(
         e, widget.personas, _overrides,
-        eventKind: kindOf(e));
+        eventKind: kindOf(e), learnedByPersona: _learned);
     EnergyImpact impactOf(CalendarEvent e) => _impacts.containsKey(e.id)
         ? EnergyImpact.fromValue(_impacts[e.id]!)
         : estimateEnergyImpact(personaOf(e), e.start);

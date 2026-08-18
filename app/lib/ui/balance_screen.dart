@@ -50,6 +50,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
         };
         final hidden = await widget.db.hiddenEventIds();
         final assignments = await widget.db.eventPersonaMap();
+        final learned = await widget.db.learnedTokensByPersona();
         final now = DateTime.now();
         final events = await widget.source
             .eventsInRange(now, now.add(const Duration(days: 7)));
@@ -59,6 +60,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
           overrides: assignments,
           hiddenEventIds: hidden,
           kindByCalendarId: kinds,
+          learnedByPersona: learned,
         );
         calHours.forEach((pid, h) => combined[pid] = (combined[pid] ?? 0) + h);
       }

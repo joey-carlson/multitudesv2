@@ -3116,6 +3116,271 @@ class EventEnergyImpactsCompanion
   }
 }
 
+class $LearnedAssociationsTable extends LearnedAssociations
+    with TableInfo<$LearnedAssociationsTable, LearnedAssociationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearnedAssociationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _tokenMeta = const VerificationMeta('token');
+  @override
+  late final GeneratedColumn<String> token = GeneratedColumn<String>(
+    'token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _personaIdMeta = const VerificationMeta(
+    'personaId',
+  );
+  @override
+  late final GeneratedColumn<String> personaId = GeneratedColumn<String>(
+    'persona_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightMeta = const VerificationMeta('weight');
+  @override
+  late final GeneratedColumn<int> weight = GeneratedColumn<int>(
+    'weight',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [token, personaId, weight];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learned_associations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearnedAssociationRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('token')) {
+      context.handle(
+        _tokenMeta,
+        token.isAcceptableOrUnknown(data['token']!, _tokenMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tokenMeta);
+    }
+    if (data.containsKey('persona_id')) {
+      context.handle(
+        _personaIdMeta,
+        personaId.isAcceptableOrUnknown(data['persona_id']!, _personaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personaIdMeta);
+    }
+    if (data.containsKey('weight')) {
+      context.handle(
+        _weightMeta,
+        weight.isAcceptableOrUnknown(data['weight']!, _weightMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {token, personaId};
+  @override
+  LearnedAssociationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearnedAssociationRow(
+      token: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}token'],
+      )!,
+      personaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}persona_id'],
+      )!,
+      weight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weight'],
+      )!,
+    );
+  }
+
+  @override
+  $LearnedAssociationsTable createAlias(String alias) {
+    return $LearnedAssociationsTable(attachedDatabase, alias);
+  }
+}
+
+class LearnedAssociationRow extends DataClass
+    implements Insertable<LearnedAssociationRow> {
+  final String token;
+  final String personaId;
+  final int weight;
+  const LearnedAssociationRow({
+    required this.token,
+    required this.personaId,
+    required this.weight,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['token'] = Variable<String>(token);
+    map['persona_id'] = Variable<String>(personaId);
+    map['weight'] = Variable<int>(weight);
+    return map;
+  }
+
+  LearnedAssociationsCompanion toCompanion(bool nullToAbsent) {
+    return LearnedAssociationsCompanion(
+      token: Value(token),
+      personaId: Value(personaId),
+      weight: Value(weight),
+    );
+  }
+
+  factory LearnedAssociationRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearnedAssociationRow(
+      token: serializer.fromJson<String>(json['token']),
+      personaId: serializer.fromJson<String>(json['personaId']),
+      weight: serializer.fromJson<int>(json['weight']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'token': serializer.toJson<String>(token),
+      'personaId': serializer.toJson<String>(personaId),
+      'weight': serializer.toJson<int>(weight),
+    };
+  }
+
+  LearnedAssociationRow copyWith({
+    String? token,
+    String? personaId,
+    int? weight,
+  }) => LearnedAssociationRow(
+    token: token ?? this.token,
+    personaId: personaId ?? this.personaId,
+    weight: weight ?? this.weight,
+  );
+  LearnedAssociationRow copyWithCompanion(LearnedAssociationsCompanion data) {
+    return LearnedAssociationRow(
+      token: data.token.present ? data.token.value : this.token,
+      personaId: data.personaId.present ? data.personaId.value : this.personaId,
+      weight: data.weight.present ? data.weight.value : this.weight,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnedAssociationRow(')
+          ..write('token: $token, ')
+          ..write('personaId: $personaId, ')
+          ..write('weight: $weight')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(token, personaId, weight);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearnedAssociationRow &&
+          other.token == this.token &&
+          other.personaId == this.personaId &&
+          other.weight == this.weight);
+}
+
+class LearnedAssociationsCompanion
+    extends UpdateCompanion<LearnedAssociationRow> {
+  final Value<String> token;
+  final Value<String> personaId;
+  final Value<int> weight;
+  final Value<int> rowid;
+  const LearnedAssociationsCompanion({
+    this.token = const Value.absent(),
+    this.personaId = const Value.absent(),
+    this.weight = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearnedAssociationsCompanion.insert({
+    required String token,
+    required String personaId,
+    this.weight = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : token = Value(token),
+       personaId = Value(personaId);
+  static Insertable<LearnedAssociationRow> custom({
+    Expression<String>? token,
+    Expression<String>? personaId,
+    Expression<int>? weight,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (token != null) 'token': token,
+      if (personaId != null) 'persona_id': personaId,
+      if (weight != null) 'weight': weight,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearnedAssociationsCompanion copyWith({
+    Value<String>? token,
+    Value<String>? personaId,
+    Value<int>? weight,
+    Value<int>? rowid,
+  }) {
+    return LearnedAssociationsCompanion(
+      token: token ?? this.token,
+      personaId: personaId ?? this.personaId,
+      weight: weight ?? this.weight,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (token.present) {
+      map['token'] = Variable<String>(token.value);
+    }
+    if (personaId.present) {
+      map['persona_id'] = Variable<String>(personaId.value);
+    }
+    if (weight.present) {
+      map['weight'] = Variable<int>(weight.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnedAssociationsCompanion(')
+          ..write('token: $token, ')
+          ..write('personaId: $personaId, ')
+          ..write('weight: $weight, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3128,6 +3393,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $EventPersonaOverridesTable(this);
   late final $EventEnergyImpactsTable eventEnergyImpacts =
       $EventEnergyImpactsTable(this);
+  late final $LearnedAssociationsTable learnedAssociations =
+      $LearnedAssociationsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3140,6 +3407,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     hiddenEvents,
     eventPersonaOverrides,
     eventEnergyImpacts,
+    learnedAssociations,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5239,6 +5507,184 @@ typedef $$EventEnergyImpactsTableProcessedTableManager =
       EventEnergyImpactRow,
       PrefetchHooks Function()
     >;
+typedef $$LearnedAssociationsTableCreateCompanionBuilder =
+    LearnedAssociationsCompanion Function({
+      required String token,
+      required String personaId,
+      Value<int> weight,
+      Value<int> rowid,
+    });
+typedef $$LearnedAssociationsTableUpdateCompanionBuilder =
+    LearnedAssociationsCompanion Function({
+      Value<String> token,
+      Value<String> personaId,
+      Value<int> weight,
+      Value<int> rowid,
+    });
+
+class $$LearnedAssociationsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearnedAssociationsTable> {
+  $$LearnedAssociationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get token => $composableBuilder(
+    column: $table.token,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personaId => $composableBuilder(
+    column: $table.personaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LearnedAssociationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearnedAssociationsTable> {
+  $$LearnedAssociationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get token => $composableBuilder(
+    column: $table.token,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personaId => $composableBuilder(
+    column: $table.personaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weight => $composableBuilder(
+    column: $table.weight,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LearnedAssociationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearnedAssociationsTable> {
+  $$LearnedAssociationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get token =>
+      $composableBuilder(column: $table.token, builder: (column) => column);
+
+  GeneratedColumn<String> get personaId =>
+      $composableBuilder(column: $table.personaId, builder: (column) => column);
+
+  GeneratedColumn<int> get weight =>
+      $composableBuilder(column: $table.weight, builder: (column) => column);
+}
+
+class $$LearnedAssociationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearnedAssociationsTable,
+          LearnedAssociationRow,
+          $$LearnedAssociationsTableFilterComposer,
+          $$LearnedAssociationsTableOrderingComposer,
+          $$LearnedAssociationsTableAnnotationComposer,
+          $$LearnedAssociationsTableCreateCompanionBuilder,
+          $$LearnedAssociationsTableUpdateCompanionBuilder,
+          (
+            LearnedAssociationRow,
+            BaseReferences<
+              _$AppDatabase,
+              $LearnedAssociationsTable,
+              LearnedAssociationRow
+            >,
+          ),
+          LearnedAssociationRow,
+          PrefetchHooks Function()
+        > {
+  $$LearnedAssociationsTableTableManager(
+    _$AppDatabase db,
+    $LearnedAssociationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearnedAssociationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearnedAssociationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearnedAssociationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> token = const Value.absent(),
+                Value<String> personaId = const Value.absent(),
+                Value<int> weight = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnedAssociationsCompanion(
+                token: token,
+                personaId: personaId,
+                weight: weight,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String token,
+                required String personaId,
+                Value<int> weight = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnedAssociationsCompanion.insert(
+                token: token,
+                personaId: personaId,
+                weight: weight,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LearnedAssociationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearnedAssociationsTable,
+      LearnedAssociationRow,
+      $$LearnedAssociationsTableFilterComposer,
+      $$LearnedAssociationsTableOrderingComposer,
+      $$LearnedAssociationsTableAnnotationComposer,
+      $$LearnedAssociationsTableCreateCompanionBuilder,
+      $$LearnedAssociationsTableUpdateCompanionBuilder,
+      (
+        LearnedAssociationRow,
+        BaseReferences<
+          _$AppDatabase,
+          $LearnedAssociationsTable,
+          LearnedAssociationRow
+        >,
+      ),
+      LearnedAssociationRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5257,4 +5703,6 @@ class $AppDatabaseManager {
       $$EventPersonaOverridesTableTableManager(_db, _db.eventPersonaOverrides);
   $$EventEnergyImpactsTableTableManager get eventEnergyImpacts =>
       $$EventEnergyImpactsTableTableManager(_db, _db.eventEnergyImpacts);
+  $$LearnedAssociationsTableTableManager get learnedAssociations =>
+      $$LearnedAssociationsTableTableManager(_db, _db.learnedAssociations);
 }

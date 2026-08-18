@@ -139,6 +139,18 @@ class EventEnergyImpacts extends Table {
   Set<Column> get primaryKey => {eventId};
 }
 
+/// Learned token→persona associations, accumulated from the user's manual
+/// event assignments (learn-from-corrections).
+@DataClassName('LearnedAssociationRow')
+class LearnedAssociations extends Table {
+  TextColumn get token => text()();
+  TextColumn get personaId => text()();
+  IntColumn get weight => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {token, personaId};
+}
+
 @DriftDatabase(tables: [
   Personas,
   EnergyReadings,
@@ -147,13 +159,14 @@ class EventEnergyImpacts extends Table {
   HiddenEvents,
   EventPersonaOverrides,
   EventEnergyImpacts,
+  LearnedAssociations,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -166,8 +179,35 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) await m.createTable(hiddenEvents);
           if (from < 6) await m.createTable(eventPersonaOverrides);
           if (from < 7) await m.createTable(eventEnergyImpacts);
+          if (from < 8) await m.createTable(learnedAssociations);
         },
       );
+
+  /// Accumulate learned associations: bump each token→persona weight by 1.
+  Future<void> recordAssignmentTokens(
+      String personaId, Set<String> tokens) async {
+    if (tokens.isEmpty) return;
+    await transaction(() async {
+      for (final t in tokens) {
+        await customStatement(
+          'INSERT INTO learned_associations (token, persona_id, weight) '
+          'VALUES (?, ?, 1) '
+          'ON CONFLICT(token, persona_id) DO UPDATE SET weight = weight + 1',
+          [t, personaId],
+        );
+      }
+    });
+  }
+
+  /// Learned tokens per persona id (any weight ≥ 1).
+  Future<Map<String, Set<String>>> learnedTokensByPersona() async {
+    final rows = await select(learnedAssociations).get();
+    final map = <String, Set<String>>{};
+    for (final r in rows) {
+      (map[r.personaId] ??= {}).add(r.token);
+    }
+    return map;
+  }
 
   /// User-set energy impacts by event id (−2..+2).
   Future<Map<String, int>> energyImpactMap() async {

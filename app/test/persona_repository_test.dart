@@ -184,4 +184,19 @@ void main() {
     await db.setEventEnergyImpact('evt-1', null); // clear
     expect((await db.energyImpactMap()).containsKey('evt-1'), isFalse);
   });
+
+  test('learned associations: record tokens, read back, accumulate weight',
+      () async {
+    expect(await db.learnedTokensByPersona(), isEmpty);
+
+    await db.recordAssignmentTokens('p1', {'book', 'club'});
+    await db.recordAssignmentTokens('p2', {'gym'});
+    final learned = await db.learnedTokensByPersona();
+    expect(learned['p1'], {'book', 'club'});
+    expect(learned['p2'], {'gym'});
+
+    // Re-recording an existing token upserts (accumulates) without error.
+    await db.recordAssignmentTokens('p1', {'book'});
+    expect((await db.learnedTokensByPersona())['p1'], contains('book'));
+  });
 }
