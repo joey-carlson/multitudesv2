@@ -73,7 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rebalancing suggestions (roadmap F4)** — for under-fed ("starving") personas,
   the Insights screen finds an open slot in that persona's peak window over the
   next week and suggests doing a couple of its ideal activities. Informational;
-  local-events lookup deferred. analyze clean, 83 tests.
+  local-events lookup deferred.
+- **Balance trends (depth)** — the fed/starving dashboard now shows a per-persona
+  trend arrow (↑/→/↓, last 7 days vs the prior 7, from completed tasks + past
+  calendar) and flags personas "getting less attention than before" — early
+  warning rather than a snapshot. analyze clean, 89 tests.
+- **Competitive analysis** (`docs/COMPETITIVE_ANALYSIS.md`) + depth/breadth
+  improvement backlog with a recommended sequence recorded in `PARKING_LOT.md`.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a
