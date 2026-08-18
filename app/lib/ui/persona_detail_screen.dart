@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import '../domain/energy_profile.dart';
 import '../domain/energy_reading.dart';
 import '../domain/persona.dart';
 import '../domain/task.dart';
@@ -55,9 +56,11 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
 
   void _loadReadings() {
     final id = _persona.id;
+    // Fetch a wider history: the newest few show as the check-in list, the full
+    // set feeds the observed-energy profile.
     _readings = id == null
         ? Future.value(const [])
-        : widget.db.recentReadings(id);
+        : widget.db.recentReadings(id, limit: 200);
   }
 
   void _loadTasks() {
@@ -198,6 +201,7 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
           const SizedBox(height: 20),
           _checkInCard(),
           const SizedBox(height: 20),
+          _energyProfileCard(),
           _EnergyWindows(persona: _persona),
           if (_persona.idealWeeklyHours > 0) ...[
             const SizedBox(height: 8),
@@ -321,7 +325,7 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
                   }
                   return Column(
                     children: [
-                      for (final r in readings)
+                      for (final r in readings.take(8))
                         ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
@@ -330,6 +334,13 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
                             child: Text('${r.energyLevel}'),
                           ),
                           title: Text(_formatTime(r.timestamp)),
+                        ),
+                      if (readings.length > 8)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text('+ ${readings.length - 8} more',
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 12)),
                         ),
                     ],
                   );
@@ -344,6 +355,83 @@ class _PersonaDetailScreenState extends State<PersonaDetailScreen> {
     final l = t.toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
     return '${l.year}-${two(l.month)}-${two(l.day)}  ${two(l.hour)}:${two(l.minute)}';
+  }
+
+  /// Observed energy pattern from this persona's own check-ins (local forecast).
+  /// Hidden until there are enough check-ins to be meaningful.
+  Widget _energyProfileCard() => FutureBuilder<List<EnergyReading>>(
+        future: _readings,
+        builder: (context, snap) {
+          final profile = buildEnergyProfile(snap.data ?? const []);
+          if (profile == null) return const SizedBox.shrink();
+          String hh(int h) => '${h.toString().padLeft(2, '0')}:00';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Observed energy pattern',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(
+                      'From ${profile.sampleCount} check-ins: highest around '
+                      '${hh(profile.peakHour)}, lowest around ${hh(profile.troughHour)}.',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    _HourlyEnergyChart(profile: profile),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+}
+
+/// Compact bar chart of average energy by hour-of-day (only hours with data).
+class _HourlyEnergyChart extends StatelessWidget {
+  const _HourlyEnergyChart({required this.profile});
+
+  final EnergyProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final hours = profile.avgByHour.keys.toList()..sort();
+    return SizedBox(
+      height: 84,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final h in hours)
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    height: (profile.avgByHour[h]! / 10.0) * 56,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: h == profile.peakHour
+                          ? Colors.green
+                          : h == profile.troughHour
+                              ? Colors.orange
+                              : Colors.blueGrey.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(h.toString().padLeft(2, '0'),
+                      style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
