@@ -7,6 +7,7 @@ import 'add_persona_screen.dart';
 import 'balance_screen.dart';
 import 'calendar_screen.dart';
 import 'insights_screen.dart';
+import 'patterns_screen.dart';
 import 'persona_detail_screen.dart';
 
 /// Home: shows the user's personas, highlights who's at peak/trough right now,
@@ -43,6 +44,20 @@ class HomeScreen extends StatelessWidget {
                   userId: userId,
                   source: resolveCalendarSource(),
                   onChanged: onRetake,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.query_stats),
+            tooltip: 'Patterns',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PatternsScreen(
+                  personas: personas,
+                  db: db,
+                  userId: userId,
+                  source: resolveCalendarSource(),
                 ),
               ),
             ),
