@@ -56,7 +56,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   guidance card nudging manual assignment when nothing matched.
 - **Manually add personas** — create a new persona from a preset archetype
   (prefilled) or fully custom (name, emoji, energy window, weekly target) via a
-  home FAB; persists to the existing store. analyze clean, 53 tests.
+  home FAB; persists to the existing store.
+- **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
+  the circumplex arousal axis + SDT vitality): a heuristic seed from the
+  matched persona's energy state at the event time, user-overridable via a
+  picker, shown as a tappable chip and summed into a "net energy" readout
+  (Drift schema v7). analyze clean, 61 tests.
 - **Design note** (`PARKING_LOT.md`): energizing-vs-draining activities grounded
   in existing research (Russell's circumplex valence/arousal, SDT subjective
   vitality, Mood Meter) with a heuristics-first design — rather than inventing.
