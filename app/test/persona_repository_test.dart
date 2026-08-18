@@ -256,6 +256,23 @@ void main() {
     expect(entries.firstWhere((e) => e.body == 'Second').prompt, isNull);
   });
 
+  test('day log: save and read back, upsert same day', () async {
+    final day = DateTime(2026, 1, 10, 9); // time part ignored (date-only)
+    expect(await db.dayLog(day), isNull);
+
+    await db.saveDayLog(day,
+        intention: 'Focus', intendedPersonaIds: ['p1', 'p2']);
+    var log = await db.dayLog(DateTime(2026, 1, 10));
+    expect(log!.intention, 'Focus');
+    expect(log.intendedPersonaIds, contains('p1'));
+    expect(log.reflection, isNull);
+
+    // Same day upserts (evening reflection added).
+    await db.saveDayLog(day, intention: 'Focus', reflection: 'Good day');
+    log = await db.dayLog(day);
+    expect(log!.reflection, 'Good day');
+  });
+
   test('learned associations: record tokens, read back, accumulate weight',
       () async {
     expect(await db.learnedTokensByPersona(), isEmpty);

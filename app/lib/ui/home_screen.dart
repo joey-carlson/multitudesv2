@@ -6,6 +6,7 @@ import '../domain/persona.dart';
 import 'add_persona_screen.dart';
 import 'balance_screen.dart';
 import 'calendar_screen.dart';
+import 'daily_ritual_screen.dart';
 import 'insights_screen.dart';
 import 'patterns_screen.dart';
 import 'persona_detail_screen.dart';
@@ -33,6 +34,16 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Your Multitudes'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.wb_sunny_outlined),
+            tooltip: 'Today',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => DailyRitualScreen(
+                    db: db, userId: userId, personas: personas),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.auto_awesome),
             tooltip: 'Insights',

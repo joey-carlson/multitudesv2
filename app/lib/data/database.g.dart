@@ -4362,6 +4362,384 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
   }
 }
 
+class $DayLogsTable extends DayLogs with TableInfo<$DayLogsTable, DayLogRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<DateTime> day = GeneratedColumn<DateTime>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intentionMeta = const VerificationMeta(
+    'intention',
+  );
+  @override
+  late final GeneratedColumn<String> intention = GeneratedColumn<String>(
+    'intention',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reflectionMeta = const VerificationMeta(
+    'reflection',
+  );
+  @override
+  late final GeneratedColumn<String> reflection = GeneratedColumn<String>(
+    'reflection',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intendedPersonaIdsMeta =
+      const VerificationMeta('intendedPersonaIds');
+  @override
+  late final GeneratedColumn<String> intendedPersonaIds =
+      GeneratedColumn<String>(
+        'intended_persona_ids',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    day,
+    intention,
+    reflection,
+    intendedPersonaIds,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayLogRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('intention')) {
+      context.handle(
+        _intentionMeta,
+        intention.isAcceptableOrUnknown(data['intention']!, _intentionMeta),
+      );
+    }
+    if (data.containsKey('reflection')) {
+      context.handle(
+        _reflectionMeta,
+        reflection.isAcceptableOrUnknown(data['reflection']!, _reflectionMeta),
+      );
+    }
+    if (data.containsKey('intended_persona_ids')) {
+      context.handle(
+        _intendedPersonaIdsMeta,
+        intendedPersonaIds.isAcceptableOrUnknown(
+          data['intended_persona_ids']!,
+          _intendedPersonaIdsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {day};
+  @override
+  DayLogRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayLogRow(
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day'],
+      )!,
+      intention: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intention'],
+      ),
+      reflection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reflection'],
+      ),
+      intendedPersonaIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intended_persona_ids'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DayLogsTable createAlias(String alias) {
+    return $DayLogsTable(attachedDatabase, alias);
+  }
+}
+
+class DayLogRow extends DataClass implements Insertable<DayLogRow> {
+  final DateTime day;
+  final String? intention;
+  final String? reflection;
+  final String? intendedPersonaIds;
+  final DateTime updatedAt;
+  const DayLogRow({
+    required this.day,
+    this.intention,
+    this.reflection,
+    this.intendedPersonaIds,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['day'] = Variable<DateTime>(day);
+    if (!nullToAbsent || intention != null) {
+      map['intention'] = Variable<String>(intention);
+    }
+    if (!nullToAbsent || reflection != null) {
+      map['reflection'] = Variable<String>(reflection);
+    }
+    if (!nullToAbsent || intendedPersonaIds != null) {
+      map['intended_persona_ids'] = Variable<String>(intendedPersonaIds);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DayLogsCompanion toCompanion(bool nullToAbsent) {
+    return DayLogsCompanion(
+      day: Value(day),
+      intention: intention == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intention),
+      reflection: reflection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reflection),
+      intendedPersonaIds: intendedPersonaIds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intendedPersonaIds),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DayLogRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayLogRow(
+      day: serializer.fromJson<DateTime>(json['day']),
+      intention: serializer.fromJson<String?>(json['intention']),
+      reflection: serializer.fromJson<String?>(json['reflection']),
+      intendedPersonaIds: serializer.fromJson<String?>(
+        json['intendedPersonaIds'],
+      ),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'day': serializer.toJson<DateTime>(day),
+      'intention': serializer.toJson<String?>(intention),
+      'reflection': serializer.toJson<String?>(reflection),
+      'intendedPersonaIds': serializer.toJson<String?>(intendedPersonaIds),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DayLogRow copyWith({
+    DateTime? day,
+    Value<String?> intention = const Value.absent(),
+    Value<String?> reflection = const Value.absent(),
+    Value<String?> intendedPersonaIds = const Value.absent(),
+    DateTime? updatedAt,
+  }) => DayLogRow(
+    day: day ?? this.day,
+    intention: intention.present ? intention.value : this.intention,
+    reflection: reflection.present ? reflection.value : this.reflection,
+    intendedPersonaIds: intendedPersonaIds.present
+        ? intendedPersonaIds.value
+        : this.intendedPersonaIds,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DayLogRow copyWithCompanion(DayLogsCompanion data) {
+    return DayLogRow(
+      day: data.day.present ? data.day.value : this.day,
+      intention: data.intention.present ? data.intention.value : this.intention,
+      reflection: data.reflection.present
+          ? data.reflection.value
+          : this.reflection,
+      intendedPersonaIds: data.intendedPersonaIds.present
+          ? data.intendedPersonaIds.value
+          : this.intendedPersonaIds,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayLogRow(')
+          ..write('day: $day, ')
+          ..write('intention: $intention, ')
+          ..write('reflection: $reflection, ')
+          ..write('intendedPersonaIds: $intendedPersonaIds, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(day, intention, reflection, intendedPersonaIds, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayLogRow &&
+          other.day == this.day &&
+          other.intention == this.intention &&
+          other.reflection == this.reflection &&
+          other.intendedPersonaIds == this.intendedPersonaIds &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DayLogsCompanion extends UpdateCompanion<DayLogRow> {
+  final Value<DateTime> day;
+  final Value<String?> intention;
+  final Value<String?> reflection;
+  final Value<String?> intendedPersonaIds;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DayLogsCompanion({
+    this.day = const Value.absent(),
+    this.intention = const Value.absent(),
+    this.reflection = const Value.absent(),
+    this.intendedPersonaIds = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DayLogsCompanion.insert({
+    required DateTime day,
+    this.intention = const Value.absent(),
+    this.reflection = const Value.absent(),
+    this.intendedPersonaIds = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : day = Value(day);
+  static Insertable<DayLogRow> custom({
+    Expression<DateTime>? day,
+    Expression<String>? intention,
+    Expression<String>? reflection,
+    Expression<String>? intendedPersonaIds,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (day != null) 'day': day,
+      if (intention != null) 'intention': intention,
+      if (reflection != null) 'reflection': reflection,
+      if (intendedPersonaIds != null)
+        'intended_persona_ids': intendedPersonaIds,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DayLogsCompanion copyWith({
+    Value<DateTime>? day,
+    Value<String?>? intention,
+    Value<String?>? reflection,
+    Value<String?>? intendedPersonaIds,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DayLogsCompanion(
+      day: day ?? this.day,
+      intention: intention ?? this.intention,
+      reflection: reflection ?? this.reflection,
+      intendedPersonaIds: intendedPersonaIds ?? this.intendedPersonaIds,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (day.present) {
+      map['day'] = Variable<DateTime>(day.value);
+    }
+    if (intention.present) {
+      map['intention'] = Variable<String>(intention.value);
+    }
+    if (reflection.present) {
+      map['reflection'] = Variable<String>(reflection.value);
+    }
+    if (intendedPersonaIds.present) {
+      map['intended_persona_ids'] = Variable<String>(intendedPersonaIds.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayLogsCompanion(')
+          ..write('day: $day, ')
+          ..write('intention: $intention, ')
+          ..write('reflection: $reflection, ')
+          ..write('intendedPersonaIds: $intendedPersonaIds, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4381,6 +4759,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
+  late final $DayLogsTable dayLogs = $DayLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4397,6 +4776,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     habits,
     habitCompletions,
     journalEntries,
+    dayLogs,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7907,6 +8287,202 @@ typedef $$JournalEntriesTableProcessedTableManager =
       JournalEntryRow,
       PrefetchHooks Function({bool personaId})
     >;
+typedef $$DayLogsTableCreateCompanionBuilder = DayLogsCompanion Function({
+  required DateTime day,
+  Value<String?> intention,
+  Value<String?> reflection,
+  Value<String?> intendedPersonaIds,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$DayLogsTableUpdateCompanionBuilder = DayLogsCompanion Function({
+  Value<DateTime> day,
+  Value<String?> intention,
+  Value<String?> reflection,
+  Value<String?> intendedPersonaIds,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$DayLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $DayLogsTable> {
+  $$DayLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intention => $composableBuilder(
+    column: $table.intention,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reflection => $composableBuilder(
+    column: $table.reflection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intendedPersonaIds => $composableBuilder(
+    column: $table.intendedPersonaIds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayLogsTable> {
+  $$DayLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intention => $composableBuilder(
+    column: $table.intention,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reflection => $composableBuilder(
+    column: $table.reflection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intendedPersonaIds => $composableBuilder(
+    column: $table.intendedPersonaIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayLogsTable> {
+  $$DayLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<DateTime> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get intention =>
+      $composableBuilder(column: $table.intention, builder: (column) => column);
+
+  GeneratedColumn<String> get reflection => $composableBuilder(
+    column: $table.reflection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get intendedPersonaIds => $composableBuilder(
+    column: $table.intendedPersonaIds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DayLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayLogsTable,
+          DayLogRow,
+          $$DayLogsTableFilterComposer,
+          $$DayLogsTableOrderingComposer,
+          $$DayLogsTableAnnotationComposer,
+          $$DayLogsTableCreateCompanionBuilder,
+          $$DayLogsTableUpdateCompanionBuilder,
+          (DayLogRow, BaseReferences<_$AppDatabase, $DayLogsTable, DayLogRow>),
+          DayLogRow,
+          PrefetchHooks Function()
+        > {
+  $$DayLogsTableTableManager(_$AppDatabase db, $DayLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DayLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<DateTime> day = const Value.absent(),
+                Value<String?> intention = const Value.absent(),
+                Value<String?> reflection = const Value.absent(),
+                Value<String?> intendedPersonaIds = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayLogsCompanion(
+                day: day,
+                intention: intention,
+                reflection: reflection,
+                intendedPersonaIds: intendedPersonaIds,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required DateTime day,
+                Value<String?> intention = const Value.absent(),
+                Value<String?> reflection = const Value.absent(),
+                Value<String?> intendedPersonaIds = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayLogsCompanion.insert(
+                day: day,
+                intention: intention,
+                reflection: reflection,
+                intendedPersonaIds: intendedPersonaIds,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayLogsTable,
+      DayLogRow,
+      $$DayLogsTableFilterComposer,
+      $$DayLogsTableOrderingComposer,
+      $$DayLogsTableAnnotationComposer,
+      $$DayLogsTableCreateCompanionBuilder,
+      $$DayLogsTableUpdateCompanionBuilder,
+      (DayLogRow, BaseReferences<_$AppDatabase, $DayLogsTable, DayLogRow>),
+      DayLogRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7933,4 +8509,6 @@ class $AppDatabaseManager {
       $$HabitCompletionsTableTableManager(_db, _db.habitCompletions);
   $$JournalEntriesTableTableManager get journalEntries =>
       $$JournalEntriesTableTableManager(_db, _db.journalEntries);
+  $$DayLogsTableTableManager get dayLogs =>
+      $$DayLogsTableTableManager(_db, _db.dayLogs);
 }

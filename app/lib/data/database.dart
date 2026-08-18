@@ -192,6 +192,20 @@ class JournalEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// One row per day: the morning plan (intention + personas to feed) and the
+/// evening reflection (daily ritual).
+@DataClassName('DayLogRow')
+class DayLogs extends Table {
+  DateTimeColumn get day => dateTime()(); // date-only
+  TextColumn get intention => text().nullable()();
+  TextColumn get reflection => text().nullable()();
+  TextColumn get intendedPersonaIds => text().nullable()(); // JSON list of ids
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {day};
+}
+
 @DriftDatabase(tables: [
   Personas,
   EnergyReadings,
@@ -204,13 +218,14 @@ class JournalEntries extends Table {
   Habits,
   HabitCompletions,
   JournalEntries,
+  DayLogs,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'multitudes'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -229,8 +244,32 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(habitCompletions);
           }
           if (from < 10) await m.createTable(journalEntries);
+          if (from < 11) await m.createTable(dayLogs);
         },
       );
+
+  /// The day log for [day], if any.
+  Future<DayLogRow?> dayLog(DateTime day) => (select(dayLogs)
+        ..where((t) => t.day.equals(DateTime(day.year, day.month, day.day))))
+      .getSingleOrNull();
+
+  /// Upsert the whole day log for [day].
+  Future<void> saveDayLog(
+    DateTime day, {
+    String? intention,
+    String? reflection,
+    List<String> intendedPersonaIds = const [],
+  }) async {
+    final d = DateTime(day.year, day.month, day.day);
+    await into(dayLogs).insertOnConflictUpdate(DayLogsCompanion.insert(
+      day: d,
+      intention: Value(intention),
+      reflection: Value(reflection),
+      intendedPersonaIds: Value(
+          intendedPersonaIds.isEmpty ? null : jsonEncode(intendedPersonaIds)),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
 
   /// Add a journal entry.
   Future<void> addJournalEntry(
