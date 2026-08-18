@@ -63,7 +63,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Timing suggestions (roadmap F2)** — events scheduled in a persona's trough
   or off-peak surface a suggestion to move to the persona's peak window: an
   inline hint on the calendar card plus a Suggestions screen (lightbulb, with a
-  count badge) aggregating the week. Non-destructive. analyze clean, 73 tests.
+  count badge) aggregating the week. Non-destructive.
+- **Persona suggestions (roadmap F5)** — an Insights screen (home ✨) suggests a
+  new persona from clusters of unmatched calendar events, and peak-window shifts
+  from energy check-ins that fall outside a persona's configured peak; offered
+  for approval, never auto-applied. Design grounded in a research pass (IFS
+  parts as metaphor, possible-selves, self-complexity coverage, wheel-of-life,
+  chronotype; offer-never-assign, no clinical claims). analyze clean, 79 tests.
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a

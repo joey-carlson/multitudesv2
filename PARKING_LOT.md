@@ -64,6 +64,39 @@ enrichment.
 - **Data controls:** export / delete-all; a single master toggle for any online
   feature (ties to REQUIREMENTS §8.5).
 
+### F5 — suggest personas / peak adjustments (v1 DONE, 2026-08-18)
+
+**Shipped:** an Insights screen suggests (a) a new preset persona from clusters
+of unmatched calendar events, and (b) a peak-window shift when a persona's
+high-energy check-ins fall outside its configured peak. Offer-never-assign.
+
+**Research grounding (WebFetch pass, 2026-08-18):**
+- **IFS "parts"** — personas ≈ parts with a positive intention; frame
+  suggestions as surfacing an existing/unnamed part, additive & non-judgmental.
+  Metaphor/vocabulary only (thin clinical evidence; avoid trauma framing).
+- **Possible selves** (Markus & Nurius) — a suggested persona = a hoped-for
+  future self hinted at by behavior; offer candidates, user names/accepts; tie
+  to concrete tasks + a time window. Strongest justification for the feature.
+- **Self-complexity** (Linville) — soft coverage/balance heuristic; only suggest
+  a genuinely distinct persona. **Do not claim wellbeing benefits** (buffering
+  effect has mixed/failed support).
+- **Wheel of Life / life domains** — coverage map for under-served domains;
+  non-prescriptive, user-editable; not a validated instrument.
+- **Chronotype/circadian** — estimate peaks from the user's *own* longitudinal
+  data; peak tracks circadian phase (not clock), varies 2–3h between people and
+  with age → personalize, re-estimate gradually.
+- **Anti-pattern:** MBTI-style fixed typing (poor reliability/validity) — never
+  assign fixed types or claim personas predict performance/happiness.
+
+**Deferred refinements (F5 v2):**
+- Peak adjustment via moving-average / slow decay over a rolling multi-week
+  window (v1 averages recent high check-ins); optional mid-sleep anchor prior.
+- Custom-persona-from-cluster for unmatched tokens matching no archetype lexicon
+  (e.g. "book club", "choir").
+- Wheel-of-Life domain-coverage map with a user-editable taxonomy + a
+  distinctiveness check before suggesting.
+- Also derive peak adjustment from task completions, not just check-ins.
+
 ### Prioritized: persona growth (higher priority than theme/distribution)
 
 - **Manually add personas.** Let users create new personas after using the tool
