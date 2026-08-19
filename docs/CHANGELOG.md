@@ -97,6 +97,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   analyze clean, 103 tests.
 - **Competitive analysis** (`docs/COMPETITIVE_ANALYSIS.md`) + depth/breadth
   improvement backlog with a recommended sequence recorded in `PARKING_LOT.md`.
+- **iOS support** — added the iOS EventKit calendar channel (parity with macOS)
+  + calendar usage strings, and `resolveCalendarSource()` now uses the live
+  device calendar on iOS. Verified `flutter build ios --no-codesign` compiles
+  (required installing Xcode's iOS platform SDK). On-device install needs
+  signing (free Apple ID works; TestFlight for other testers needs a paid
+  account).
 - **Energy impact (draining/energizing)** — per-event −2..+2 scale (grounded in
   the circumplex arousal axis + SDT vitality): a heuristic seed from the
   matched persona's energy state at the event time, user-overridable via a

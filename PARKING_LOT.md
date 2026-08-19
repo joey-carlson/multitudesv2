@@ -251,6 +251,16 @@ whole series** — accepted for now (2026-08-17). Revisit only if needed:
 - Rule-based auto-hide (e.g. all-day events, events the user isn't organizing,
   keywords like OOO/PTO/leave/holiday).
 
+### Distribution — status (2026-08-19)
+
+- **iOS builds** (`flutter build ios --no-codesign` verified). iOS EventKit
+  calendar channel added (parity with macOS). Prereq that bit us: Xcode needs
+  the iOS platform SDK installed (`xcodebuild -downloadPlatform iOS`).
+- **On your own device:** free Apple ID signing via Xcode (7-day installs).
+- **TestFlight (other testers): still needs a paid Apple Developer account
+  ($99/yr)** → then `flutter build ipa` + upload. Deferred until an account
+  exists.
+
 ### Deferred: package for tester distribution + feedback
 
 Bundle the local-first Flutter app so others can install it and give feedback.
