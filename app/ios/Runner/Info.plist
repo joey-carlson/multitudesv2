@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Multitudes reads your calendar to match events to your personas and suggest better timing. Your calendar data stays on this device.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Multitudes reads your calendar to match events to your personas and suggest better timing. Your calendar data stays on this device.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

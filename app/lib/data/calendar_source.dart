@@ -16,7 +16,7 @@ import '../domain/calendar_event.dart';
 /// sample source so the feature is always usable.
 CalendarSource resolveCalendarSource() {
   try {
-    if (Platform.isMacOS) return DeviceCalendarSource();
+    if (Platform.isMacOS || Platform.isIOS) return DeviceCalendarSource();
   } catch (_) {
     // Platform unavailable (e.g. tests/web) — fall through to sample.
   }
